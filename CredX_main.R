@@ -48,6 +48,11 @@ Demographic_data <- Demographic_data[!duplicated(Demographic_data$Application.ID
 
 Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
 
+#Converting data to category variables.
+
+Demographic_data$No.of.dependents <- as.factor(Demographic_data$No.of.dependents)
+Demographic_data$Performance.Tag <- as.factor(Demographic_data$Performance.Tag)
+summary(Demographic_data)
 
 sapply(Credit_Bureau_data, function(x) sum(is.na(x)))
 nrow(Credit_Bureau_data)
@@ -59,3 +64,4 @@ nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
 
 Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
 
+merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
