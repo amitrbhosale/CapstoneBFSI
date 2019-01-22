@@ -37,8 +37,25 @@ length(unique(Demographic_data$Application.ID))
 
 # Looking from the data, there are duplicate Application IDs in the dataset
 
+nrow(Demographic_data[duplicated(Demographic_data$Application.ID),])
 
+# As the number of duplicates are very less compared to the size of the dataset, removing the duplicate records
+
+# Removing the duplicate records
+Demographic_data <- Demographic_data[!duplicated(Demographic_data$Application.ID),]
 
 # Looking at the Demographic dataset, there are 3 areas in No.of.Dependents where the value is NA, we are replacing it with 0.
 
 Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
+
+
+sapply(Credit_Bureau_data, function(x) sum(is.na(x)))
+nrow(Credit_Bureau_data)
+length(unique(Credit_Bureau_data$Application.ID))
+
+nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
+
+# As the number of duplicates are very less compared to the size of the dataset, removing the duplicate records
+
+Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
+
