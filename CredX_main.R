@@ -29,3 +29,16 @@ summary(Demographic_data)
 sum(is.na(Demographic_data))
 # 1428 null values found in the Demographic dataset.
 
+sapply(Demographic_data, function(x) sum(is.na(x)))
+
+#Checking unique Application IDs
+nrow(Demographic_data)
+length(unique(Demographic_data$Application.ID))
+
+# Looking from the data, there are duplicate Application IDs in the dataset
+
+
+
+# Looking at the Demographic dataset, there are 3 areas in No.of.Dependents where the value is NA, we are replacing it with 0.
+
+Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
