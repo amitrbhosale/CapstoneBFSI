@@ -67,7 +67,9 @@ Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Applicat
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
 
+
 nrow(merged_df)
+
 #Need to perform WOE and IV Analysis, The cleaning would be done using the WOE transformation.
 
 # As there are two attributes in the merged data frame "merge_df" (Performance.Tag.x and Performance.Tag.y), we are checking if both carry the same data.
@@ -80,4 +82,6 @@ sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | i
 
 # Removing the redundant column
 merged_df$Performance.Tag.y <- NULL
+
+
 
