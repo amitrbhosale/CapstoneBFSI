@@ -46,7 +46,8 @@ Demographic_data <- Demographic_data[!duplicated(Demographic_data$Application.ID
 
 # Looking at the Demographic dataset, there are 3 areas in No.of.Dependents where the value is NA, we are replacing it with 0.
 
-Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
+#Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
+# We need to verify the NA logic for number of dependents from WoE data before we can mark it as 0
 
 #Converting data to category variables.
 
