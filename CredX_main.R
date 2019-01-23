@@ -66,3 +66,7 @@ nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
 Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
+
+#Need to perform WOE and IV Analysis
+
+
