@@ -66,3 +66,18 @@ nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
 Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
+
+nrow(merged_df)
+#Need to perform WOE and IV Analysis, The cleaning would be done using the WOE transformation.
+
+# As there are two attributes in the merged data frame "merge_df" (Performance.Tag.x and Performance.Tag.y), we are checking if both carry the same data.
+
+# Below function returns the total occurrences if the values are exactly matching including the NAs
+
+sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | ifelse(is.na(merged_df$Performance.Tag.x) & is.na(merged_df$Performance.Tag.y), 1,0))
+
+# Since, the above sum matches the row count of the merged data frame, we can conclude that both columns are identical and one column can be removed.
+
+# Removing the redundant column
+merged_df$Performance.Tag.y <- NULL
+
