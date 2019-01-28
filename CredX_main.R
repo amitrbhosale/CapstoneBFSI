@@ -72,20 +72,6 @@ Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Applicat
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
 
-<<<<<<< HEAD
-#EDA to find the important variables
-
-#Filtering defaulters data
-Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
-
-ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
-
-ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
-
-ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
-
-#Need to perform WOE and IV Analysis
-=======
 
 nrow(merged_df)
 
@@ -100,8 +86,20 @@ sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | i
 # Since, the above sum matches the row count of the merged data frame, we can conclude that both columns are identical and one column can be removed.
 
 # Removing the redundant column
-merged_df$Performance.Tag.y <- NULL
+merged_df$Performance.Tag.x <- NULL
 
->>>>>>> b79e7e68798836f0706c91f93cdb18835d30529a
+#EDA to find the important variables
+
+#Filtering only defaulters data
+Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
+
+ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
+
+#Need to perform WOE and IV Analysis
+
 
 
