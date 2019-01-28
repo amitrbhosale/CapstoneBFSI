@@ -74,11 +74,14 @@ merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", 
 
 #EDA to find the important variables
 
-ggplot(merged_df, aes(x=factor(Performance.Tag.y)))+
-  geom_bar(aes(fill=Gender),position = "stack", stat = "count")
+#Filtering defaulters data
+Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
 
-ggplot(merged_df, aes(x=factor(Performance.Tag.y)))+
-  geom_bar(aes(fill=merged_df$Marital.Status..at.the.time.of.application.),position = "stack", stat = "count")
+ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
 #Need to perform WOE and IV Analysis
 
