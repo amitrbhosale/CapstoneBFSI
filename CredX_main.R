@@ -72,6 +72,7 @@ Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Applicat
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
 
+<<<<<<< HEAD
 #EDA to find the important variables
 
 #Filtering defaulters data
@@ -84,5 +85,23 @@ ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(
 ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
 #Need to perform WOE and IV Analysis
+=======
+
+nrow(merged_df)
+
+#Need to perform WOE and IV Analysis, The cleaning would be done using the WOE transformation.
+
+# As there are two attributes in the merged data frame "merge_df" (Performance.Tag.x and Performance.Tag.y), we are checking if both carry the same data.
+
+# Below function returns the total occurrences if the values are exactly matching including the NAs
+
+sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | ifelse(is.na(merged_df$Performance.Tag.x) & is.na(merged_df$Performance.Tag.y), 1,0))
+
+# Since, the above sum matches the row count of the merged data frame, we can conclude that both columns are identical and one column can be removed.
+
+# Removing the redundant column
+merged_df$Performance.Tag.y <- NULL
+
+>>>>>>> b79e7e68798836f0706c91f93cdb18835d30529a
 
 
