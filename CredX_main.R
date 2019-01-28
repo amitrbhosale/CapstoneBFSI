@@ -1,6 +1,11 @@
 # CredX - Acquisition Risk Analysis Capstone Project.
 
+#Installing Required Packages
+install.packages("rstudioapi")
+install.packages("ggplot2")
 library(rstudioapi)
+library(ggplot2)
+
 #Set working directory to directory of the file
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -66,6 +71,14 @@ nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
 Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
+
+#EDA to find the important variables
+
+ggplot(merged_df, aes(x=factor(Performance.Tag.y)))+
+  geom_bar(aes(fill=Gender),position = "stack", stat = "count")
+
+ggplot(merged_df, aes(x=factor(Performance.Tag.y)))+
+  geom_bar(aes(fill=merged_df$Marital.Status..at.the.time.of.application.),position = "stack", stat = "count")
 
 #Need to perform WOE and IV Analysis
 
