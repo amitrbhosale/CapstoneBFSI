@@ -102,4 +102,31 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 #Need to perform WOE and IV Analysis
 
 
+install.packages("Information")
+library("Information")
 
+summary(merged_df$Performance.Tag.y)
+
+#Remove NAs from Dependant Variable as it won't allow execution of IV functions.
+traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+
+traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
+# Generate InfoTables for the variables
+IV <- create_infotables(traindata,y="Performance.Tag.y")
+
+# Plot IVs for first 4 variables
+plot_infotables(IV, IV$Summary$Variable[1:4],same_scales = TRUE)
+
+# Get WOE values for all 10 bins for Age variable
+
+IV$Tables$Age$WOE
+
+# Extract variable names
+names <- names(IV$Tables)
+
+plots <- list()
+for (i in 1:length(names)){
+  plots[[i]] <- plot_infotables(IV, names[i])
+}
+# Showing the top 28 variables
+plots[1:28]
