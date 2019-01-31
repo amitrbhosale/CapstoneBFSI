@@ -3,6 +3,8 @@
 #Installing Required Packages
 install.packages("rstudioapi")
 install.packages("ggplot2")
+install.packages("Information")
+library("Information")
 library(rstudioapi)
 library(ggplot2)
 
@@ -180,34 +182,46 @@ ggplot(EDA_data_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_defaulte
 
 #------------------------------------END OF EDA------------------------------------------------------------------
 
-#Need to perform WOE and IV Analysis
-
-
-install.packages("Information")
-library("Information")
+#Calculation of WOE and finding the important attributes based on IV
 
 summary(merged_df$Performance.Tag.y)
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
-traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+WOE_Data <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+WOE_Data$Performance.Tag.y <- as.numeric(WOE_Data$Performance.Tag.y)
+WOE_Data[which(WOE_Data[]<0)] <- NULL
 
-traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
+#Converting categorical variables to factor
+WOE_Data$Presence.of.open.auto.loan <- factor(WOE_Data$Presence.of.open.auto.loan)
+WOE_Data$Presence.of.open.home.loan <- factor(WOE_Data$Presence.of.open.home.loan)
+
+#Removing application ID column
+WOE_Data <- WOE_Data[,-1]
+
 # Generate InfoTables for the variables
-IV <- create_infotables(traindata,y="Performance.Tag.y")
+IV <- create_infotables(WOE_Data,y="Performance.Tag.y", parallel = TRUE)
 
-# Plot IVs for first 4 variables
-plot_infotables(IV, IV$Summary$Variable[1:4],same_scales = TRUE)
+IV$Summary
+#It is evident from summary of IV table that following attributes are not significant and can be rejected in the model
+#24                                      Presence.of.open.home.loan 1.761939e-02
+#1                                                              Age 3.350241e-03
+#4                                                 No.of.dependents 2.653501e-03
+#7                                                       Profession 2.219893e-03
+#27                                      Presence.of.open.auto.loan 1.658061e-03
+#8                                                Type.of.residence 9.198065e-04
+#6                                                        Education 7.825416e-04
+#2                                                           Gender 3.258695e-04
+#3                      Marital.Status..at.the.time.of.application. 9.473857e-05
+
+# Plot IVs for prominent variables obtained from IV's summary
+plot_infotables(IV, IV$Summary$Variable[5],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[9],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[1:6],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[7:12],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[13:18],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[19:23],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[25:26],same_scales = TRUE)
+#It is found that all th above variables are monotonic. i.e either growing or decresing with the groupings.
 
 # Get WOE values for all 10 bins for Age variable
-
-IV$Tables$Age$WOE
-
-# Extract variable names
-names <- names(IV$Tables)
-
-plots <- list()
-for (i in 1:length(names)){
-  plots[[i]] <- plot_infotables(IV, names[i])
-}
-# Showing the top 28 variables
-plots[1:28]
+IV$Tables
