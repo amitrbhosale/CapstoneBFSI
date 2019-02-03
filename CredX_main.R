@@ -286,3 +286,142 @@ WOE_Data_final <- woe_replace(temp, IV)
 #WOE_Data_final gives the final model after replacing the values with corresponding WOE values
 
 str(WOE_Data_final)
+
+#---------------------------------------------------------------------------------------------------------------#
+
+#-----------------------------------------Obtaing WOE FInal data for demographic data------------------------------------
+
+#Setting the negative values to null
+
+Demographic_data_final <- Demographic_data
+Demographic_data_final[Demographic_data_final < 0] <- NA
+
+#------------------------------------------EDA to find the important variables-----------------------------------
+
+#Filtering only defaulters data
+EDA_data_demographic <- Demographic_data_final
+
+#Finding no of NAs in EDA_data dataframe
+sum(is.na(EDA_data_demographic$Performance.Tag))
+
+#Removing records with Performance tag as NA since EDA need to be done on defaulted or non defaulted records
+EDA_data_demographic <- subset(EDA_data_demographic,!is.na(EDA_data_demographic$Performance.Tag))
+
+ggplot(EDA_data_demographic, aes(x=Gender,fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+ggplot(EDA_data_demographic, aes(x=EDA_data_demographic$Marital.Status..at.the.time.of.application.,fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+ggplot(EDA_data_demographic, aes(x=factor(EDA_data_demographic$No.of.dependents),fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+ggplot(EDA_data_demographic, aes(x=factor(EDA_data_demographic$Education),fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+ggplot(EDA_data_demographic, aes(x=factor(EDA_data_demographic$Profession),fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+ggplot(EDA_data_demographic, aes(x=factor(EDA_data_demographic$Type.of.residence),fill=factor(Performance.Tag)))+geom_bar(position = "fill")
+
+#Based on EDA done for categorical variables in above graphs, there is no specific attribute which has high impact on performance and hence all are included in WOE.
+
+#Taking only defaulters data for EDA on continuous values attributes
+EDA_data_demographic_defaulted <- subset(EDA_data_demographic,EDA_data_demographic$Performance.Tag==1)
+
+ggplot(EDA_data_demographic_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_demographic_defaulted$Age), binwidth = 5)
+#The defaulters ratio is more between age range 30 to 50
+
+ggplot(EDA_data_demographic_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_demographic_defaulted$Income), binwidth = 5)
+#It is found that as the income keeps increasing, the deault rate keeps decreasing
+
+ggplot(EDA_data_demographic_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_demographic_defaulted$No.of.months.in.current.residence), binwidth = 5)
+#There is a slight reduce in defaulters ratio as the no of months in current residence increases
+
+ggplot(EDA_data_demographic_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_demographic_defaulted$No.of.months.in.current.company), binwidth = 5)
+#Defaulters reduce as the no of months in current company increases
+
+#From above EDA it is found that all the attributes has impact on performance tag of a customer and hence all the attributes are considered for WOE and IV
+
+#------------------------------------END OF EDA for Demographic data------------------------------------------------------------------
+
+#Calculation of WOE and finding the important attributes based on IV
+
+summary(Demographic_data_final$Performance.Tag)
+
+#Remove NAs from Dependant Variable as it won't allow execution of IV functions.
+WOE_Data_Demographic <- subset(Demographic_data_final, is.na(Demographic_data_final$Performance.Tag)==FALSE)
+WOE_Data_Demographic$Performance.Tag <- as.numeric(as.character(WOE_Data_Demographic$Performance.Tag))
+
+# Generate InfoTables for the variables
+IV_Demographic <- create_infotables(WOE_Data_Demographic,y="Performance.Tag", parallel = TRUE)
+
+IV_Demographic$Summary
+#All the values lie above 0.02 except for Application_ID and hence are comsidered for modelling
+
+# Plot IVs for prominent variables obtained from IV's summary
+
+plot_infotables(IV_Demographic, IV_Demographic$Summary$Variable[2:5],same_scales = TRUE)
+plot_infotables(IV_Demographic, IV_Demographic$Summary$Variable[6:9],same_scales = TRUE)
+plot_infotables(IV_Demographic, IV_Demographic$Summary$Variable[10:11],same_scales = TRUE)
+
+#Even thogh some attributes like Age , No-of_dependents dont show monotonic behaviour, they are considered based on IV value
+
+# Get WOE values for all 10 bins
+IV_Demographic$Tables
+
+#Function to replace column values with WOE value
+woe_replace <- function(df_orig, IV) {
+  df <- cbind(df_orig)
+  df_clmtyp <- data.frame(clmtyp = sapply(df, class))
+  df_col_typ <-
+    data.frame(clmnm = colnames(df), clmtyp = df_clmtyp$clmtyp)
+  for (rownm in 1:nrow(df_col_typ)) {
+    colmn_nm <- toString(df_col_typ[rownm, "clmnm"])    
+    if(colmn_nm %in% names(IV$Tables)){
+      column_woe_df <- cbind(data.frame(IV$Tables[[toString(df_col_typ[rownm, "clmnm"])]]))
+      if (df_col_typ[rownm, "clmtyp"] == "factor" | df_col_typ[rownm, "clmtyp"] == "character") {
+        df <-
+          dplyr::inner_join(
+            df,
+            column_woe_df[,c(colmn_nm,"WOE")],
+            by = colmn_nm,
+            type = "inner",
+            match = "all"
+          )
+        df[colmn_nm]<-NULL
+        colnames(df)[colnames(df)=="WOE"]<-colmn_nm
+      } else if (df_col_typ[rownm, "clmtyp"] == "numeric" | df_col_typ[rownm, "clmtyp"] == "integer") {
+        column_woe_df$lv<-as.numeric(str_sub(
+          column_woe_df[,colmn_nm],
+          regexpr("\\[", column_woe_df[,colmn_nm]) + 1,
+          regexpr(",", column_woe_df[,colmn_nm]) - 1
+        ))
+        column_woe_df$uv<-as.numeric(str_sub(
+          column_woe_df[,colmn_nm],
+          regexpr(",", column_woe_df[,colmn_nm]) + 1,
+          regexpr("\\]", column_woe_df[,colmn_nm]) - 1
+        ))
+        column_woe_df[colmn_nm]<-NULL      
+        column_woe_df<-column_woe_df[,c("lv","uv","WOE")]      
+        colnames(df)[colnames(df)==colmn_nm]<-"WOE_temp2381111111111111697"      
+        df <-
+          fuzzy_inner_join(
+            df,
+            column_woe_df[,c("lv","uv","WOE")],
+            by = c("WOE_temp2381111111111111697"="lv","WOE_temp2381111111111111697"="uv"),
+            match_fun=list(`>=`,`<=`) 
+          )      
+        df["WOE_temp2381111111111111697"]<-NULL      
+        df["lv"]<-NULL      
+        df["uv"]<-NULL      
+        colnames(df)[colnames(df)=="WOE"]<-colmn_nm      
+      }}
+  }
+  return(df)
+}
+
+#Calling the above function to replace values with WOE
+
+#Obtaining a data frame with only important variables (obtained from IV)
+temp_demographic <- WOE_Data_Demographic
+
+WOE_Data_Demographic_final <- woe_replace(temp_demographic, IV_Demographic)
+#WOE_Data_Demographic_final gives the final model after replacing the values with corresponding WOE values
+
+str(WOE_Data_Demographic_final)
