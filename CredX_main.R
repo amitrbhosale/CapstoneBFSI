@@ -198,8 +198,11 @@ WOE_Data$Performance.Tag.y <- as.numeric(WOE_Data$Performance.Tag.y)
 WOE_Data$Presence.of.open.auto.loan <- factor(WOE_Data$Presence.of.open.auto.loan)
 WOE_Data$Presence.of.open.home.loan <- factor(WOE_Data$Presence.of.open.home.loan)
 
+#Dataset without application ID column
+Temp_woe <- WOE_Data[,!names(WOE_Data) %in% c("Application.ID")]
+
 # Generate InfoTables for the variables
-IV <- create_infotables(WOE_Data,y="Performance.Tag.y", parallel = TRUE)
+IV <- create_infotables(Temp_woe,y="Performance.Tag.y", parallel = TRUE)
 
 IV$Summary
 #It is evident from summary of IV table that following attributes are not significant and can be rejected in the model
@@ -280,7 +283,7 @@ woe_replace <- function(df_orig, IV) {
 #Calling the above function to replace values with WOE
 
 #Obtaining a data frame with only important variables (obtained from IV)
-temp <- WOE_Data[,-c(1:5,7:9,25,28)]
+temp <- WOE_Data[,-c(2:5,7:9,25,28)]
 
 WOE_Data_final <- woe_replace(temp, IV)
 #WOE_Data_final gives the final model after replacing the values with corresponding WOE values
@@ -347,6 +350,9 @@ summary(Demographic_data_final$Performance.Tag)
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
 WOE_Data_Demographic <- subset(Demographic_data_final, is.na(Demographic_data_final$Performance.Tag)==FALSE)
 WOE_Data_Demographic$Performance.Tag <- as.numeric(as.character(WOE_Data_Demographic$Performance.Tag))
+
+#Dataset without application ID column
+Temp_demographic_woe <- WOE_Data[,!names(WOE_Data_Demographic) %in% c("Application.ID")]
 
 # Generate InfoTables for the variables
 IV_Demographic <- create_infotables(WOE_Data_Demographic,y="Performance.Tag", parallel = TRUE)
