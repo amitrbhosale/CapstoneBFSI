@@ -57,8 +57,8 @@ Demographic_data <- Demographic_data[!duplicated(Demographic_data$Application.ID
 
 # Looking at the Demographic dataset, there are 3 areas in No.of.Dependents where the value is NA, we are replacing it with 0.
 
-#Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
-# We need to verify the NA logic for number of dependents from WoE data before we can mark it as 0
+#Since No of dependents has only 6 levels including NA, we are considering it as categorical attribute and setting the NA to 9999
+Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 9999
 
 #Converting data to category variables.
 
@@ -67,6 +67,9 @@ Demographic_data$Performance.Tag <- as.factor(Demographic_data$Performance.Tag)
 summary(Demographic_data)
 
 sapply(Credit_Bureau_data, function(x) sum(is.na(x)))
+#No.of.trades.opened.in.last.6.months, Avgas.CC.Utilization.in.last.12.months, Presence.of.open.home.loan, Outstanding.Balance have NA values
+#All the above mentioned variables are of type integer.
+
 nrow(Credit_Bureau_data)
 length(unique(Credit_Bureau_data$Application.ID))
 
@@ -94,9 +97,162 @@ sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | i
 # Removing the redundant column
 merged_df$Performance.Tag.x <- NULL
 
-#Setting the negative values to null
+#Finding Outliers
 
-merged_df[merged_df < 0] <- NA
+#For Age
+boxplot(merged_df$Age)
+#There are some values which are negative
+quantile(merged_df$Age, probs = seq(0,1,0.01))
+#Can't find any specific value which can be replaced for negative value
+#Setting the records with negative age value to 18 since it is the min age required
+merged_df$Age[which(merged_df$Age < 18)] <- 18
+
+#For Income
+boxplot(merged_df$Income)
+which(merged_df$Income < 0)
+#There are some values which are negative
+quantile(merged_df$Income, probs = seq(0,1,0.01))
+#Setting the negative value to 4.5 based on output from quantile function
+merged_df$Income[which(merged_df$Income < 0)] <- 4.5
+
+#For No.of.months.in.current.residence
+boxplot(merged_df$No.of.months.in.current.residence)
+which(merged_df$No.of.months.in.current.residence <= 0)
+
+#For No.of.months.in.current.residence
+boxplot(merged_df$No.of.months.in.current.company)
+quantile(merged_df$No.of.months.in.current.company, probs = seq(0,1,0.01))
+#Not replacing the outlier since it is a possible scenario (133 months)
+
+#For No.of.times.90.DPD.or.worse.in.last.6.months
+boxplot(merged_df$No.of.times.90.DPD.or.worse.in.last.6.months)
+which(merged_df$No.of.times.90.DPD.or.worse.in.last.6.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.90.DPD.or.worse.in.last.6.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.90.DPD.or.worse.in.last.6.months, probs = seq(0,1,0.01))
+
+#For No.of.times.60.DPD.or.worse.in.last.6.months
+boxplot(merged_df$No.of.times.60.DPD.or.worse.in.last.6.months)
+which(merged_df$No.of.times.60.DPD.or.worse.in.last.6.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.60.DPD.or.worse.in.last.6.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.60.DPD.or.worse.in.last.6.months, probs = seq(0,1,0.01))
+
+#For No.of.times.30.DPD.or.worse.in.last.6.months
+boxplot(merged_df$No.of.times.30.DPD.or.worse.in.last.6.months)
+which(merged_df$No.of.times.30.DPD.or.worse.in.last.6.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.30.DPD.or.worse.in.last.6.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.30.DPD.or.worse.in.last.6.months, probs = seq(0,1,0.01))
+
+#For No.of.times.90.DPD.or.worse.in.last.12.months
+boxplot(merged_df$No.of.times.90.DPD.or.worse.in.last.12.months)
+which(merged_df$No.of.times.90.DPD.or.worse.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.90.DPD.or.worse.in.last.12.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.90.DPD.or.worse.in.last.12.months, probs = seq(0,1,0.01))
+
+#For No.of.times.60.DPD.or.worse.in.last.12.months
+boxplot(merged_df$No.of.times.60.DPD.or.worse.in.last.12.months)
+which(merged_df$No.of.times.60.DPD.or.worse.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.60.DPD.or.worse.in.last.12.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.60.DPD.or.worse.in.last.12.months, probs = seq(0,1,0.01))
+
+#For No.of.times.30.DPD.or.worse.in.last.12.months
+boxplot(merged_df$No.of.times.30.DPD.or.worse.in.last.12.months)
+which(merged_df$No.of.times.30.DPD.or.worse.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.times.30.DPD.or.worse.in.last.12.months))
+#There are no NA Values
+quantile(merged_df$No.of.times.30.DPD.or.worse.in.last.12.months, probs = seq(0,1,0.01))
+
+#For Avgas.CC.Utilization.in.last.12.months
+boxplot(merged_df$Avgas.CC.Utilization.in.last.12.months)
+which(merged_df$Avgas.CC.Utilization.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))
+#There are records with NA Values
+quantile(merged_df$Avgas.CC.Utilization.in.last.12.months[!is.na(merged_df$Avgas.CC.Utilization.in.last.12.months)] , probs = seq(0,1,0.01))
+#Setting NA values to 90 according to data obtained from quantile
+merged_df$Avgas.CC.Utilization.in.last.12.months[is.na(merged_df$Avgas.CC.Utilization.in.last.12.months)] <- 90
+
+#For No.of.trades.opened.in.last.6.months
+boxplot(merged_df$No.of.trades.opened.in.last.6.months)
+which(merged_df$No.of.trades.opened.in.last.6.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.trades.opened.in.last.6.months))
+#There is one record with NA Values
+quantile(merged_df$No.of.trades.opened.in.last.6.months[!is.na(merged_df$No.of.trades.opened.in.last.6.months)] , probs = seq(0,1,0.01))
+#Setting NA values to 9 according to data obtained from quantile
+merged_df$No.of.trades.opened.in.last.6.months[is.na(merged_df$No.of.trades.opened.in.last.6.months)] <- 9
+
+#For No.of.trades.opened.in.last.12.months
+boxplot(merged_df$No.of.trades.opened.in.last.12.months)
+which(merged_df$No.of.trades.opened.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.trades.opened.in.last.12.months))
+#There are no records with NA Values
+quantile(merged_df$No.of.trades.opened.in.last.6.months[!is.na(merged_df$No.of.trades.opened.in.last.6.months)] , probs = seq(0,1,0.01))
+
+#For No.of.PL.trades.opened.in.last.6.months
+boxplot(merged_df$No.of.PL.trades.opened.in.last.6.months)
+which(merged_df$No.of.PL.trades.opened.in.last.6.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.PL.trades.opened.in.last.6.months))
+#There are no records with NA Values
+quantile(merged_df$No.of.trades.opened.in.last.6.months , probs = seq(0,1,0.01))
+
+#For No.of.PL.trades.opened.in.last.12.months
+boxplot(merged_df$No.of.PL.trades.opened.in.last.12.months)
+which(merged_df$No.of.PL.trades.opened.in.last.12.months < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.PL.trades.opened.in.last.12.months))
+#There are no records with NA Values
+quantile(merged_df$No.of.PL.trades.opened.in.last.12.months , probs = seq(0,1,0.01))
+
+#For No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+boxplot(merged_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
+which(merged_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.))
+#There are no records with NA Values
+quantile(merged_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. , probs = seq(0,1,0.01))
+
+#For No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+boxplot(merged_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
+which(merged_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. < 0)
+#There are no values which are negative
+sum(is.na(merged_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.))
+#There are no records with NA Values
+quantile(merged_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. , probs = seq(0,1,0.01))
+
+#For Outstanding.Balance
+boxplot(merged_df$Outstanding.Balance)
+which(merged_df$Outstanding.Balance < 0)
+#There are no values which are negative
+sum(is.na(merged_df$Outstanding.Balance))
+#There are records with NA Values
+quantile(merged_df$Outstanding.Balance[!is.na(merged_df$Outstanding.Balance)] , probs = seq(0,1,0.01))
+mean(merged_df$Outstanding.Balance[!is.na(merged_df$Outstanding.Balance)])
+median(merged_df$Outstanding.Balance[!is.na(merged_df$Outstanding.Balance)])
+#Generally replacing it with median value is a better approach and hence replacing NAs by 774994.5
+merged_df$Outstanding.Balance[is.na(merged_df$Outstanding.Balance)] <- 774994.5
+
+#For Total.No.of.Trades
+boxplot(merged_df$Total.No.of.Trades)
+which(merged_df$Total.No.of.Trades < 0)
+#There are no values which are negative
+sum(is.na(merged_df$Total.No.of.Trades))
+#There are no records with NA Values
+quantile(merged_df$Outstanding.Balance[!is.na(merged_df$Outstanding.Balance)] , probs = seq(0,1,0.01))
+
+sapply(merged_df, function(x) sum(is.na(x)))
 
 #------------------------------------------EDA to find the important variables-----------------------------------
 
@@ -218,12 +374,11 @@ IV$Summary
 
 # Plot IVs for prominent variables obtained from IV's summary
 plot_infotables(IV, IV$Summary$Variable[5],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[9],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[1:6],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[7:12],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[13:18],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[19:23],same_scales = TRUE)
-plot_infotables(IV, IV$Summary$Variable[25:26],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[9:13],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[14:17],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[18:22],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[23],same_scales = TRUE)
+plot_infotables(IV, IV$Summary$Variable[25,26],same_scales = TRUE)
 #It is found that all th above variables are monotonic. i.e either growing or decresing with the groupings.
 
 # Get WOE values for all 10 bins for Age variable
@@ -297,7 +452,24 @@ str(WOE_Data_final)
 #Setting the negative values to null
 
 Demographic_data_final <- Demographic_data
-Demographic_data_final[Demographic_data_final < 0] <- NA
+
+#Data cleaning for NA records
+
+#For Age
+boxplot(Demographic_data_final$Age)
+#There are some values which are negative
+quantile(Demographic_data_final$Age, probs = seq(0,1,0.01))
+#Can't find any specific value which can be replaced for negative value
+#Setting the records with negative age value to 18 since it is the min age required
+Demographic_data_final$Age[which(Demographic_data_final$Age < 18)] <- 18
+
+#For Income
+boxplot(Demographic_data_final$Income)
+which(Demographic_data_final$Income < 0)
+#There are some values which are negative
+quantile(Demographic_data_final$Income, probs = seq(0,1,0.01))
+#Setting the negative value to 4.5 based on output from quantile function
+Demographic_data_final$Income[which(Demographic_data_final$Income < 0)] <- 4.5
 
 #------------------------------------------EDA to find the important variables-----------------------------------
 
