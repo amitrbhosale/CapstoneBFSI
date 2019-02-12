@@ -129,7 +129,6 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
 #Need to perform WOE and IV Analysis
 
-
 summary(merged_df$Performance.Tag.y)
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
@@ -260,3 +259,10 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 # Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.6.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
+
+
+# Create a dataframe with the important variables identified and the dependant variable
+
+impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
+
+
