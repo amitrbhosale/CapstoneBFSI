@@ -3,9 +3,13 @@
 #Installing Required Packages
 install.packages("rstudioapi")
 install.packages("ggplot2")
+
+install.packages("stringr")
+install.packages("Information")
+library("Information")
 library(rstudioapi)
 library(ggplot2)
-
+library(stringr)
 #Set working directory to directory of the file
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -88,9 +92,33 @@ sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | i
 # Removing the redundant column
 merged_df$Performance.Tag.x <- NULL
 
+# Fixing the negative values for some variables which are outliers.
+
+quantile(merged_df$Age,seq(0,1,0.01))
+
+# We can see a jump in the Age variable from -3 to 27 and Age cannot be negative, therefore we are treating this outlier.
+
+merged_df$Age <- ifelse(merged_df$Age<27, 27, merged_df$Age)
+
+#Checking if the Income variable has outliers.
+
+quantile(merged_df$Income, seq(0,1,0.01))
+
+# We can see a jump in the Income variable from -0.5 to 4.5 and Income cannot be negative, therefore we are treating this as an outlier.
+
+merged_df$Income <- ifelse(merged_df$Income<4.5, 4.5, merged_df$Income)
+
+# Checking if the Outstanding.Balance variable has outliers
+quantile(merged_df$Outstanding.Balance, seq(0,1,0.01))
+
+outlier <- boxplot.stats(merged_df$Outstanding.Balance)
+outlier$out
+
+
+
 #EDA to find the important variables
 
-#Filtering only defaulters data
+#Filtering only defaulters data for univariate analysis
 Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
 
 ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
@@ -102,31 +130,133 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 #Need to perform WOE and IV Analysis
 
 
-install.packages("Information")
-library("Information")
-
 summary(merged_df$Performance.Tag.y)
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
 traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
 
 traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
+
+
 # Generate InfoTables for the variables
-IV <- create_infotables(traindata,y="Performance.Tag.y")
+IV <- create_infotables(traindata,y="Performance.Tag.y",parallel = TRUE, ncore = 4)
 
-# Plot IVs for first 4 variables
-plot_infotables(IV, IV$Summary$Variable[1:4],same_scales = TRUE)
+IV$Summary
+predictor_variables <- data.frame(IV$Summary)
+predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
 
-# Get WOE values for all 10 bins for Age variable
+predictor_variables
 
-IV$Tables$Age$WOE
+sapply(merged_df, function(x) sum(is.na(x)))
 
-# Extract variable names
-names <- names(IV$Tables)
 
-plots <- list()
-for (i in 1:length(names)){
-  plots[[i]] <- plot_infotables(IV, names[i])
-}
-# Showing the top 28 variables
-plots[1:28]
+IV$Tables$Avgas.CC.Utilization.in.last.12.months
+val <- IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")]
+napos <- which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")
+
+repos <- which.min(abs(IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[-napos] - val)) + 1 # Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1]
+
+a <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],",")[1]
+b <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$Avgas.CC.Utilization.in.last.12.months[which(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))] <- replacement
+
+
+
+# Checking the second predictor variable No.of.trades.opened.in.last.12.months
+
+IV$Tables$No.of.trades.opened.in.last.12.months
+
+
+# Checking the third predictor variable No.of.PL.trades.opened.in.last.12.months
+
+IV$Tables$No.of.PL.trades.opened.in.last.12.months
+
+# Checking the fourth predictor variable 
+
+IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+
+# Checking the fifth predictor variable Outstanding.Balance
+
+IV$Tables$Outstanding.Balance
+val <- IV$Tables$Outstanding.Balance$WOE[which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")]
+napos <- which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")
+
+repos <- which.min(abs(IV$Tables$Outstanding.Balance$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$Outstanding.Balance[repos,1]
+
+a <- str_locate(IV$Tables$Outstanding.Balance[repos,1],",")[1]
+b <- str_locate(IV$Tables$Outstanding.Balance[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$Outstanding.Balance[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$Outstanding.Balance[which(is.na(merged_df$Outstanding.Balance))] <- replacement
+
+
+# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.6.months
+IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months
+
+
+# Checking another predictor variable Total.No.of.Trades
+
+IV$Tables$Total.No.of.Trades
+
+# Checking another predictor variable No.of.PL.trades.opened.in.last.6.months
+
+IV$Tables$No.of.PL.trades.opened.in.last.6.months
+
+# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.90.DPD.or.worse.in.last.12.months
+
+# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.6.months
+
+IV$Tables$No.of.times.60.DPD.or.worse.in.last.6.months
+
+# Checking another predictor variable No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+
+IV$Tables$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+
+# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.30.DPD.or.worse.in.last.12.months
+
+#Checking another predictor variable No.of.trades.opened.in.last.6.months
+
+IV$Tables$No.of.trades.opened.in.last.6.months
+val <- IV$Tables$No.of.trades.opened.in.last.6.months$WOE[which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")]
+napos <- which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")
+
+repos <- which.min(abs(IV$Tables$No.of.trades.opened.in.last.6.months$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$No.of.trades.opened.in.last.6.months[repos,1]
+
+a <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],",")[1]
+b <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$No.of.trades.opened.in.last.6.months[which(is.na(merged_df$No.of.trades.opened.in.last.6.months))] <- replacement
+
+
+# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
+
+# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.6.months
+
+IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
