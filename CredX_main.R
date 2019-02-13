@@ -3,10 +3,14 @@
 #Installing Required Packages
 install.packages("rstudioapi")
 install.packages("ggplot2")
-
 install.packages("stringr")
 install.packages("Information")
-library("Information")
+install.packages("MASS")
+library(MASS)
+install.packages("car")
+install.packages("Rcpp")
+library(car)
+library(Information)
 library(rstudioapi)
 library(ggplot2)
 library(stringr)
@@ -125,148 +129,39 @@ ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(
 
 ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
-#Need to perform WOE and IV Analysis
+#Need to perform WOE and IV Analysis for demographic data
 
-summary(merged_df$Performance.Tag.y)
+summary(Demographic_data$Performance.Tag)
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
-traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+traindata_demographic <- subset(Demographic_data, is.na(Demographic_data$Performance.Tag)==FALSE)
 
-traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
+for (i in 1:nrow(traindata_demographic)) {
+  ifelse(traindata_demographic$Performance.Tag[i]==0,traindata_demographic$Performance.Tag[i] <- 1,traindata_demographic$Performance.Tag[i] <- 0)
+}
+
+traindata_demographic$Performance.Tag <- as.numeric(as.character(traindata_demographic$Performance.Tag))
 
 # Generate InfoTables for the variables
-IV <- create_infotables(traindata,y="Performance.Tag.y",parallel = TRUE, ncore = 4)
+IV_demographic <- create_infotables(traindata_demographic,y="Performance.Tag",parallel = TRUE, ncore = 4)
 
-IV$Summary
+IV_demographic$Summary
 
 #Adding a bar graph to see the important variablles based on IV value
-All_IVs <- data.frame(IV$Summary)
-All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-All_IVs$IV)])
-ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+All_IV_dem <- data.frame(IV_demographic$Summary)
+All_IV_dem$Variable <- factor(All_IV_dem$Variable, levels = All_IV_dem$Variable[order(-All_IV_dem$IV)])
+ggplot(All_IV_dem, aes(x=All_IV_dem$Variable,y=All_IV_dem$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-predictor_variables <- data.frame(IV$Summary)
-predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
+sapply(Demographic_data, function(x) sum(is.na(x)))
 
-predictor_variables
+#Only No.of.dependents has 3 NA values and hence replacing those 3 values by nearest value according to IV
+which(is.na(Demographic_data$No.of.dependents))
+Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 1 
 
-sapply(merged_df, function(x) sum(is.na(x)))
+#----------------Model Building for Demographic Data set-------------------------
+#---------------------------------------------------------    
 
+# splitting into train and test data
 
-IV$Tables$Avgas.CC.Utilization.in.last.12.months
-val <- IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")]
-napos <- which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")
+set.seed(1)
 
-repos <- which.min(abs(IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[-napos] - val)) + 1 # Adding 1 as first row is excluded
-
-#Replacing NA value with highest value in the bucket available at position repos
-#Getting the highest value as mentioned earlier
-
-IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1]
-
-a <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],",")[1]
-b <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],"]")[1]
-replacement <- as.numeric(substr(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],a+1,b-1))
-
-#Replacing the value where NA's are located in the original dataset
-merged_df$Avgas.CC.Utilization.in.last.12.months[which(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))] <- replacement
-
-# Checking the second predictor variable No.of.trades.opened.in.last.12.months
-
-IV$Tables$No.of.trades.opened.in.last.12.months
-
-
-# Checking the third predictor variable No.of.PL.trades.opened.in.last.12.months
-
-IV$Tables$No.of.PL.trades.opened.in.last.12.months
-
-# Checking the fourth predictor variable 
-
-IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
-
-# Checking the fifth predictor variable Outstanding.Balance
-
-IV$Tables$Outstanding.Balance
-val <- IV$Tables$Outstanding.Balance$WOE[which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")]
-napos <- which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")
-
-repos <- which.min(abs(IV$Tables$Outstanding.Balance$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
-
-#Replacing NA value with highest value in the bucket available at position repos
-#Getting the highest value as mentioned earlier
-
-IV$Tables$Outstanding.Balance[repos,1]
-
-a <- str_locate(IV$Tables$Outstanding.Balance[repos,1],",")[1]
-b <- str_locate(IV$Tables$Outstanding.Balance[repos,1],"]")[1]
-replacement <- as.numeric(substr(IV$Tables$Outstanding.Balance[repos,1],a+1,b-1))
-
-#Replacing the value where NA's are located in the original dataset
-merged_df$Outstanding.Balance[which(is.na(merged_df$Outstanding.Balance))] <- replacement
-
-
-# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.6.months
-IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months
-
-
-# Checking another predictor variable Total.No.of.Trades
-
-IV$Tables$Total.No.of.Trades
-
-# Checking another predictor variable No.of.PL.trades.opened.in.last.6.months
-
-IV$Tables$No.of.PL.trades.opened.in.last.6.months
-
-# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.12.months
-
-IV$Tables$No.of.times.90.DPD.or.worse.in.last.12.months
-
-# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.6.months
-
-IV$Tables$No.of.times.60.DPD.or.worse.in.last.6.months
-
-# Checking another predictor variable No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
-
-IV$Tables$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
-
-# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.12.months
-
-IV$Tables$No.of.times.30.DPD.or.worse.in.last.12.months
-
-#Checking another predictor variable No.of.trades.opened.in.last.6.months
-
-IV$Tables$No.of.trades.opened.in.last.6.months
-val <- IV$Tables$No.of.trades.opened.in.last.6.months$WOE[which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")]
-napos <- which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")
-
-repos <- which.min(abs(IV$Tables$No.of.trades.opened.in.last.6.months$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
-
-#Replacing NA value with highest value in the bucket available at position repos
-#Getting the highest value as mentioned earlier
-
-IV$Tables$No.of.trades.opened.in.last.6.months[repos,1]
-
-a <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],",")[1]
-b <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],"]")[1]
-replacement <- as.numeric(substr(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],a+1,b-1))
-
-#Replacing the value where NA's are located in the original dataset
-merged_df$No.of.trades.opened.in.last.6.months[which(is.na(merged_df$No.of.trades.opened.in.last.6.months))] <- replacement
-
-
-# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.12.months
-
-IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
-
-# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.6.months
-
-IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
-
-<<<<<<< HEAD
-=======
-  
-  # Create a dataframe with the important variables identified and the dependant variable
-  
-  impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
-
-
->>>>>>> 1ff7bf21d11938b800b0e771066532a5b68581f7
