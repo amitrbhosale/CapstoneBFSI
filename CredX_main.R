@@ -109,12 +109,10 @@ quantile(merged_df$Income, seq(0,1,0.01))
 merged_df$Income <- ifelse(merged_df$Income<4.5, 4.5, merged_df$Income)
 
 # Checking if the Outstanding.Balance variable has outliers
-quantile(merged_df$Outstanding.Balance, seq(0,1,0.01))
+quantile(merged_df$Outstanding.Balance, seq(0,1,0.01),na.rm = TRUE)
 
 outlier <- boxplot.stats(merged_df$Outstanding.Balance)
 outlier$out
-
-
 
 #EDA to find the important variables
 
@@ -129,7 +127,6 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
 #Need to perform WOE and IV Analysis
 
-
 summary(merged_df$Performance.Tag.y)
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
@@ -137,11 +134,16 @@ traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
 
 traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
 
-
 # Generate InfoTables for the variables
 IV <- create_infotables(traindata,y="Performance.Tag.y",parallel = TRUE, ncore = 4)
 
 IV$Summary
+
+#Adding a bar graph to see the important variablles based on IV value
+All_IVs <- data.frame(IV$Summary)
+All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-All_IVs$IV)])
+ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 predictor_variables <- data.frame(IV$Summary)
 predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
 
@@ -167,8 +169,6 @@ replacement <- as.numeric(substr(IV$Tables$Avgas.CC.Utilization.in.last.12.month
 
 #Replacing the value where NA's are located in the original dataset
 merged_df$Avgas.CC.Utilization.in.last.12.months[which(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))] <- replacement
-
-
 
 # Checking the second predictor variable No.of.trades.opened.in.last.12.months
 
@@ -260,3 +260,4 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 # Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.6.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
+
