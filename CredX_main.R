@@ -261,3 +261,12 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
 
+<<<<<<< HEAD
+=======
+
+# Create a dataframe with the important variables identified and the dependant variable
+
+impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
+
+
+>>>>>>> 1ff7bf21d11938b800b0e771066532a5b68581f7
