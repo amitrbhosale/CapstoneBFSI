@@ -1,0 +1,272 @@
+# CredX - Acquisition Risk Analysis Capstone Project.
+
+#Installing Required Packages
+install.packages("rstudioapi")
+install.packages("ggplot2")
+
+install.packages("stringr")
+install.packages("Information")
+library("Information")
+library(rstudioapi)
+library(ggplot2)
+library(stringr)
+#Set working directory to directory of the file
+
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+getwd()
+
+# Read the datasets
+
+Demographic_data <- read.csv("Demographic data.csv")
+
+# Demographic data contains customer level information (age, gender, income, marital status, etc)
+
+View(Demographic_data)
+
+Credit_Bureau_data <- read.csv("Credit Bureau data.csv")
+
+# Credit Bureau Data contains information taken from credit bureau. ('number of times 30 DPD or worse in last 3/6/12 months', 'outstanding balance', 'number of trades', etc.) 
+
+View(Credit_Bureau_data)
+
+# Data Cleaning - Demographic data file.
+
+summary(Demographic_data)
+
+# Identify the null values or na values.
+
+sum(is.na(Demographic_data))
+# 1428 null values found in the Demographic dataset.
+
+sapply(Demographic_data, function(x) sum(is.na(x)))
+
+#Checking unique Application IDs
+nrow(Demographic_data)
+length(unique(Demographic_data$Application.ID))
+
+# Looking from the data, there are duplicate Application IDs in the dataset
+
+nrow(Demographic_data[duplicated(Demographic_data$Application.ID),])
+
+# As the number of duplicates are very less compared to the size of the dataset, removing the duplicate records
+
+# Removing the duplicate records
+Demographic_data <- Demographic_data[!duplicated(Demographic_data$Application.ID),]
+
+# Looking at the Demographic dataset, there are 3 areas in No.of.Dependents where the value is NA, we are replacing it with 0.
+
+#Demographic_data$No.of.dependents[which(is.na(Demographic_data$No.of.dependents))] <- 0
+# We need to verify the NA logic for number of dependents from WoE data before we can mark it as 0
+
+#Converting data to category variables.
+
+Demographic_data$No.of.dependents <- as.factor(Demographic_data$No.of.dependents)
+Demographic_data$Performance.Tag <- as.factor(Demographic_data$Performance.Tag)
+summary(Demographic_data)
+
+sapply(Credit_Bureau_data, function(x) sum(is.na(x)))
+nrow(Credit_Bureau_data)
+length(unique(Credit_Bureau_data$Application.ID))
+
+nrow(Credit_Bureau_data[duplicated(Credit_Bureau_data$Application.ID),])
+
+# As the number of duplicates are very less compared to the size of the dataset, removing the duplicate records
+
+Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Application.ID),]
+
+merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
+
+
+nrow(merged_df)
+
+#Need to perform WOE and IV Analysis, The cleaning would be done using the WOE transformation.
+
+# As there are two attributes in the merged data frame "merge_df" (Performance.Tag.x and Performance.Tag.y), we are checking if both carry the same data.
+
+# Below function returns the total occurrences if the values are exactly matching including the NAs
+
+sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | ifelse(is.na(merged_df$Performance.Tag.x) & is.na(merged_df$Performance.Tag.y), 1,0))
+
+# Since, the above sum matches the row count of the merged data frame, we can conclude that both columns are identical and one column can be removed.
+
+# Removing the redundant column
+merged_df$Performance.Tag.x <- NULL
+
+# Fixing the negative values for some variables which are outliers.
+
+quantile(merged_df$Age,seq(0,1,0.01))
+
+# We can see a jump in the Age variable from -3 to 27 and Age cannot be negative, therefore we are treating this outlier.
+
+merged_df$Age <- ifelse(merged_df$Age<27, 27, merged_df$Age)
+
+#Checking if the Income variable has outliers.
+
+quantile(merged_df$Income, seq(0,1,0.01))
+
+# We can see a jump in the Income variable from -0.5 to 4.5 and Income cannot be negative, therefore we are treating this as an outlier.
+
+merged_df$Income <- ifelse(merged_df$Income<4.5, 4.5, merged_df$Income)
+
+# Checking if the Outstanding.Balance variable has outliers
+quantile(merged_df$Outstanding.Balance, seq(0,1,0.01),na.rm = TRUE)
+
+outlier <- boxplot.stats(merged_df$Outstanding.Balance)
+outlier$out
+
+#EDA to find the important variables
+
+#Filtering only defaulters data for univariate analysis
+Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
+
+ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
+
+ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
+
+#Need to perform WOE and IV Analysis
+
+summary(merged_df$Performance.Tag.y)
+
+#Remove NAs from Dependant Variable as it won't allow execution of IV functions.
+traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+
+traindata$Performance.Tag.y <- as.numeric(traindata$Performance.Tag.y)
+
+# Generate InfoTables for the variables
+IV <- create_infotables(traindata,y="Performance.Tag.y",parallel = TRUE, ncore = 4)
+
+IV$Summary
+
+#Adding a bar graph to see the important variablles based on IV value
+All_IVs <- data.frame(IV$Summary)
+All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-All_IVs$IV)])
+ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+predictor_variables <- data.frame(IV$Summary)
+predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
+
+predictor_variables
+
+sapply(merged_df, function(x) sum(is.na(x)))
+
+
+IV$Tables$Avgas.CC.Utilization.in.last.12.months
+val <- IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")]
+napos <- which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")
+
+repos <- which.min(abs(IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[-napos] - val)) + 1 # Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1]
+
+a <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],",")[1]
+b <- str_locate(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$Avgas.CC.Utilization.in.last.12.months[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$Avgas.CC.Utilization.in.last.12.months[which(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))] <- replacement
+
+# Checking the second predictor variable No.of.trades.opened.in.last.12.months
+
+IV$Tables$No.of.trades.opened.in.last.12.months
+
+
+# Checking the third predictor variable No.of.PL.trades.opened.in.last.12.months
+
+IV$Tables$No.of.PL.trades.opened.in.last.12.months
+
+# Checking the fourth predictor variable 
+
+IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+
+# Checking the fifth predictor variable Outstanding.Balance
+
+IV$Tables$Outstanding.Balance
+val <- IV$Tables$Outstanding.Balance$WOE[which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")]
+napos <- which(IV$Tables$Outstanding.Balance$Outstanding.Balance == "NA")
+
+repos <- which.min(abs(IV$Tables$Outstanding.Balance$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$Outstanding.Balance[repos,1]
+
+a <- str_locate(IV$Tables$Outstanding.Balance[repos,1],",")[1]
+b <- str_locate(IV$Tables$Outstanding.Balance[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$Outstanding.Balance[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$Outstanding.Balance[which(is.na(merged_df$Outstanding.Balance))] <- replacement
+
+
+# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.6.months
+IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months
+
+
+# Checking another predictor variable Total.No.of.Trades
+
+IV$Tables$Total.No.of.Trades
+
+# Checking another predictor variable No.of.PL.trades.opened.in.last.6.months
+
+IV$Tables$No.of.PL.trades.opened.in.last.6.months
+
+# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.90.DPD.or.worse.in.last.12.months
+
+# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.6.months
+
+IV$Tables$No.of.times.60.DPD.or.worse.in.last.6.months
+
+# Checking another predictor variable No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+
+IV$Tables$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+
+# Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.30.DPD.or.worse.in.last.12.months
+
+#Checking another predictor variable No.of.trades.opened.in.last.6.months
+
+IV$Tables$No.of.trades.opened.in.last.6.months
+val <- IV$Tables$No.of.trades.opened.in.last.6.months$WOE[which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")]
+napos <- which(IV$Tables$No.of.trades.opened.in.last.6.months$No.of.trades.opened.in.last.6.months == "NA")
+
+repos <- which.min(abs(IV$Tables$No.of.trades.opened.in.last.6.months$WOE[-napos] - val)) + 1 #Adding 1 as first row is excluded
+
+#Replacing NA value with highest value in the bucket available at position repos
+#Getting the highest value as mentioned earlier
+
+IV$Tables$No.of.trades.opened.in.last.6.months[repos,1]
+
+a <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],",")[1]
+b <- str_locate(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],"]")[1]
+replacement <- as.numeric(substr(IV$Tables$No.of.trades.opened.in.last.6.months[repos,1],a+1,b-1))
+
+#Replacing the value where NA's are located in the original dataset
+merged_df$No.of.trades.opened.in.last.6.months[which(is.na(merged_df$No.of.trades.opened.in.last.6.months))] <- replacement
+
+
+# Checking another predictor variable No.of.times.60.DPD.or.worse.in.last.12.months
+
+IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
+
+# Checking another predictor variable No.of.times.90.DPD.or.worse.in.last.6.months
+
+IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
+
+<<<<<<< HEAD
+=======
+  
+  # Create a dataframe with the important variables identified and the dependant variable
+  
+  impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
+
+
+>>>>>>> 1ff7bf21d11938b800b0e771066532a5b68581f7
