@@ -3,10 +3,9 @@
 #Installing Required Packages
 install.packages("rstudioapi")
 install.packages("ggplot2")
-
 install.packages("stringr")
 install.packages("Information")
-library("Information")
+library(Information)
 library(rstudioapi)
 library(ggplot2)
 library(stringr)
@@ -128,6 +127,11 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 #Need to perform WOE and IV Analysis
 
 summary(merged_df$Performance.Tag.y)
+
+#Swapping o and 1 values for performance tag column since 1 should denote good and 0 should denote bad
+#for (i in 1:nrow(merged_df)) {
+#  ifelse(merged_df$Performance.Tag.y[i]==0,merged_df$Performance.Tag.y[i] <- 1,merged_df$Performance.Tag.y[i] <- 0)
+#}
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
 traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
