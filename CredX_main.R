@@ -759,3 +759,23 @@ model_2<- stepAIC(model_1, direction="both")
 
 summary(model_2)
 vif(model_2)
+
+# Removing Total.No.of.Trades due to high vif and relatively high p-value
+model_3 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
+                 family = "binomial", data = train)
+summary(model_3)
+vif(model_3)
+
+
+# Removing No.of.trades.opened.in.last.12.months due to high p-value
+
+model_4 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
+               family = "binomial", data = train)
+summary(model_4)
+vif(model_4)
+
+final_model <- model_4
