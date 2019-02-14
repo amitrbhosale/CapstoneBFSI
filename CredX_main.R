@@ -128,10 +128,16 @@ ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
 
 summary(merged_df$Performance.Tag.y)
 
-#Swapping o and 1 values for performance tag column since 1 should denote good and 0 should denote bad
-#for (i in 1:nrow(merged_df)) {
-#  ifelse(merged_df$Performance.Tag.y[i]==0,merged_df$Performance.Tag.y[i] <- 1,merged_df$Performance.Tag.y[i] <- 0)
-#}
+length(which(merged_df$Performance.Tag.y==1))
+length(which(merged_df$Performance.Tag.y==0))
+
+#Swapping 0 and 1 values for performance tag column since 1 should denote good and 0 should denote bad
+for (i in 1:nrow(merged_df)) {
+  ifelse(merged_df$Performance.Tag.y[i]==0,merged_df$Performance.Tag.y[i] <- 1,merged_df$Performance.Tag.y[i] <- 0)
+}
+length(which(merged_df$Performance.Tag.y==1))
+length(which(merged_df$Performance.Tag.y==0))
+
 
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
 traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
@@ -146,7 +152,7 @@ IV$Summary
 #Adding a bar graph to see the important variablles based on IV value
 All_IVs <- data.frame(IV$Summary)
 All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-All_IVs$IV)])
-ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_hline(yintercept = 0.1, color = "red")  + xlab("Predictor Variable") + ylab("IV") + ggtitle("IV for Predictor variable")
 
 predictor_variables <- data.frame(IV$Summary)
 predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
@@ -268,6 +274,3 @@ IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
 # Create a dataframe with the important variables identified and the dependant variable
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
-
-
-
