@@ -5,10 +5,23 @@ install.packages("rstudioapi")
 install.packages("ggplot2")
 install.packages("stringr")
 install.packages("Information")
+install.packages("MASS")
+install.packages("car")
+install.packages("e1071")
+install.packages("caret", dependencies = c("Depends", "Suggests"))
+install.packages("cowplot")
+install.packages("GGally")
 library(Information)
 library(rstudioapi)
 library(ggplot2)
 library(stringr)
+library(MASS)
+library(car)
+library(e1071)
+library(caret)
+library(cowplot)
+library(caTools)
+
 #Set working directory to directory of the file
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -722,3 +735,27 @@ rows_df <- nrow(impvar_df)
       }
       
       sum(is.na(impvar_df$No.of.times.90.DPD.or.worse.in.last.6.months)) 
+      
+      
+# Modelling Logistic regression
+      
+########################################################################
+      # splitting the data between train and test
+      set.seed(100)
+      
+      indices = sample.split(impvar_df$Performance.Tag.y, SplitRatio = 0.7)
+      
+      train = impvar_df[indices,]
+      
+      test = impvar_df[!(indices),]
+      
+      
+      #Initial model
+      model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
+      summary(model_1)
+      
+# Using StepAIC function
+model_2<- stepAIC(model_1, direction="both")
+
+summary(model_2)
+vif(model_2)
