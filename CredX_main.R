@@ -278,55 +278,46 @@ impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.T
 
 # WOE replacement in the impvar_df to be carried out.
 
-woe_replace <- function(dataframe, IV, predictor_var){
-  
-  df <- dataframe
-  IV <- IV
-  rows_df <- nrow(df)
-  cols_df <- ncol(df)
-  #IVTable <- 0
-  predictor <- predictor_var
-  # For every column, perform the following actions
-  for ( i in 1:cols_df-1){
-    
-    colname <- colnames(df[i])
-    IVTable <- IV$Tables[[colname]]
-    
-    if(is.factor(df[,i])==FALSE) #Numeric column
-    {
-      IVTable$min1 <- str_locate(IVTable[colname],"\\[")[,1]
-      IVTable$min2 <- str_locate(IVTable[colname],"\\,")[,1]
-      
-      IVTable$min <- as.numeric(substr(IVTable[colname],IVTable$min1+1, IVTable$min2-1))
-      
-      IVTable$max1 <- str_locate(IVTable[colname],"\\,")[,1]
-      IVTable$max2 <- str_locate(IVTable[colname],"\\]")[,1]
-      
-      IVTable$max <- as.numeric(substr(IVTable[colname], IVTable$max1+1, IVTable$max2-1))
-      
-      
-      # Perform following action for every row - for replacement
-      for(j in 1: rows_df){
-        val <- df[j,i]
-        woepos <- which(val>= IVTable$min && val <= IVTable$max)
-        woeval <- IVTable$WOE[woepos]
-        #Replacement
-        df[j,i] <- woeval
-        
-      }
-    }
-    else {
-      
-      print("factor")
-      
-    }
-    
-    
-  }
-  
-  return(df)
-  
-}
-
-
-testing <- woe_replace(impvar_df,IV,predictor_variables$Variable)
+# woe_replace <- function(dataframe, IV, predictor_var)
+# {
+#   df <- dataframe
+#   IV <- IV
+#   rows_df <- nrow(df)
+#   cols_df <- ncol(df)
+#   #IVTable <- 0
+#   predictor <- predictor_var
+#   # For every column, perform the following actions
+#   for ( i in 1:cols_df-1)
+#   {
+#     colname <- colnames(df[i])
+#     num <- which(names(IV$Tables)==colname)
+#     IVTable <- data.frame(IV$Tables[[num]])
+#     if(is.factor(df[,i])==FALSE) #Numeric column
+#     {
+#       IVTable$min1 <- str_locate(IVTable[colname],"\\[")[,1]
+#       IVTable$min2 <- str_locate(IVTable[colname],"\\,")[,1]
+#       
+#       IVTable$min <- as.numeric(substr(IVTable[colname],IVTable$min1+1, IVTable$min2-1))
+#       
+#       IVTable$max1 <- str_locate(IVTable[colname],"\\,")[,1]
+#       IVTable$max2 <- str_locate(IVTable[colname],"\\]")[,1]
+#       
+#       IVTable$max <- as.numeric(substr(IVTable[colname], IVTable$max1+1, IVTable$max2-1))
+#       
+#       
+#       # Perform following action for every row - for replacement
+#       for(j in 1: rows_df)
+#       {
+#         val <- df[j,i]
+#         woepos <- which(val>= IVTable$min && val <= IVTable$max)
+#         woeval <- IVTable$WOE[woepos]
+#         #Replacement
+#         df[j,i] <- woeval
+#       }
+#     }
+#     
+#   }
+#   return(df)
+# }
+# 
+# testing <- woe_replace(impvar_df,IV,predictor_variables$Variable)
