@@ -179,7 +179,7 @@ replacement <- as.numeric(substr(IV$Tables$Avgas.CC.Utilization.in.last.12.month
 
 #Replacing the value where NA's are located in the original dataset
 merged_df$Avgas.CC.Utilization.in.last.12.months[which(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))] <- replacement
-
+sum(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))
 # Checking the second predictor variable No.of.trades.opened.in.last.12.months
 
 IV$Tables$No.of.trades.opened.in.last.12.months
@@ -271,6 +271,7 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
 
+traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
 # Create a dataframe with the important variables identified and the dependant variable
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
@@ -321,3 +322,403 @@ impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.T
 # }
 # 
 # testing <- woe_replace(impvar_df,IV,predictor_variables$Variable)
+
+
+# Replacing the woe values for predictor variables
+
+rows_df <- nrow(impvar_df)
+
+#Avgas.CC.Utilization.in.last.12.months
+
+      IVTable <- data.frame(IV$Tables$Avgas.CC.Utilization.in.last.12.months)
+
+      IVTable$min1 <- str_locate(IVTable$Avgas.CC.Utilization.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$Avgas.CC.Utilization.in.last.12.months,"\\,")[,1]
+
+      IVTable$min <- as.numeric(substr(IVTable$Avgas.CC.Utilization.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+
+      IVTable$max1 <- str_locate(IVTable$Avgas.CC.Utilization.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$Avgas.CC.Utilization.in.last.12.months,"\\]")[,1]
+
+      IVTable$max <- as.numeric(substr(IVTable$Avgas.CC.Utilization.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+
+# Perform following action for every row - for replacement
+   for(j in 1: rows_df)
+       {
+         val <- impvar_df$Avgas.CC.Utilization.in.last.12.months[j]
+         woepos <- which(val>= IVTable$min & val <= IVTable$max)
+         woeval <- as.numeric(IVTable$WOE[woepos])
+         #Replacement
+         impvar_df$Avgas.CC.Utilization.in.last.12.months[j] <- woeval
+       }
+
+      sum(is.na(impvar_df$Avgas.CC.Utilization.in.last.12.months))
+
+#No.of.trades.opened.in.last.12.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.trades.opened.in.last.12.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.trades.opened.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.trades.opened.in.last.12.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.trades.opened.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.trades.opened.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.trades.opened.in.last.12.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.trades.opened.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.trades.opened.in.last.12.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.trades.opened.in.last.12.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.trades.opened.in.last.12.months))
+      
+      
+#No.of.PL.trades.opened.in.last.12.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.12.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.PL.trades.opened.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.12.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.PL.trades.opened.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.PL.trades.opened.in.last.12.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.PL.trades.opened.in.last.12.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.PL.trades.opened.in.last.12.months))
+      
+#No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+      
+      IVTable <- data.frame(IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans., IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.))
+      
+#Outstanding.Balance
+      
+      IVTable <- data.frame(IV$Tables$Outstanding.Balance)
+      
+      IVTable$min1 <- str_locate(IVTable$Outstanding.Balance,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$Outstanding.Balance,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$Outstanding.Balance,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$Outstanding.Balance,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$Outstanding.Balance,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$Outstanding.Balance, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$Outstanding.Balance[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$Outstanding.Balance[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$Outstanding.Balance))
+      
+
+#No.of.times.30.DPD.or.worse.in.last.6.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.30.DPD.or.worse.in.last.6.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.30.DPD.or.worse.in.last.6.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.30.DPD.or.worse.in.last.6.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.30.DPD.or.worse.in.last.6.months))
+      
+#Total.No.of.Trades
+      
+      IVTable <- data.frame(IV$Tables$Total.No.of.Trades)
+      
+      IVTable$min1 <- str_locate(IVTable$Total.No.of.Trades,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$Total.No.of.Trades,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$Total.No.of.Trades,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$Total.No.of.Trades,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$Total.No.of.Trades,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$Total.No.of.Trades, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$Total.No.of.Trades[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$Total.No.of.Trades[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$Total.No.of.Trades))
+      
+#No.of.PL.trades.opened.in.last.6.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.PL.trades.opened.in.last.6.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.6.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.6.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.PL.trades.opened.in.last.6.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.6.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.PL.trades.opened.in.last.6.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.PL.trades.opened.in.last.6.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.PL.trades.opened.in.last.6.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.PL.trades.opened.in.last.6.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.PL.trades.opened.in.last.6.months))
+      
+#No.of.times.90.DPD.or.worse.in.last.12.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.90.DPD.or.worse.in.last.12.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.90.DPD.or.worse.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.90.DPD.or.worse.in.last.12.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.90.DPD.or.worse.in.last.12.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.90.DPD.or.worse.in.last.12.months))
+
+#No.of.times.60.DPD.or.worse.in.last.12.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.60.DPD.or.worse.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.60.DPD.or.worse.in.last.12.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.60.DPD.or.worse.in.last.12.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.60.DPD.or.worse.in.last.12.months))  
+      
+
+#No.of.times.60.DPD.or.worse.in.last.6.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.60.DPD.or.worse.in.last.6.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.60.DPD.or.worse.in.last.6.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.60.DPD.or.worse.in.last.6.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.60.DPD.or.worse.in.last.6.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.60.DPD.or.worse.in.last.6.months))       
+      
+#No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+      
+      IVTable <- data.frame(IV$Tables$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans., IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)) 
+
+#No.of.times.30.DPD.or.worse.in.last.12.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.30.DPD.or.worse.in.last.12.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.30.DPD.or.worse.in.last.12.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.30.DPD.or.worse.in.last.12.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.30.DPD.or.worse.in.last.12.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.30.DPD.or.worse.in.last.12.months))
+      
+      
+#No.of.trades.opened.in.last.6.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.trades.opened.in.last.6.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.trades.opened.in.last.6.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.trades.opened.in.last.6.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.trades.opened.in.last.6.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.trades.opened.in.last.6.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.trades.opened.in.last.6.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.trades.opened.in.last.6.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.trades.opened.in.last.6.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.trades.opened.in.last.6.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.trades.opened.in.last.6.months))
+      
+      
+#No.of.times.90.DPD.or.worse.in.last.6.months
+      
+      IVTable <- data.frame(IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months)
+      
+      IVTable$min1 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months,"\\[")[,1]
+      IVTable$min2 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      
+      IVTable$min <- as.numeric(substr(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months,IVTable$min1+1, IVTable$min2-1))
+      
+      IVTable$max1 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months,"\\,")[,1]
+      IVTable$max2 <- str_locate(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months,"\\]")[,1]
+      
+      IVTable$max <- as.numeric(substr(IVTable$No.of.times.90.DPD.or.worse.in.last.6.months, IVTable$max1+1, IVTable$max2-1))
+      
+      # Perform following action for every row - for replacement
+      for(j in 1: rows_df)
+      {
+        val <- impvar_df$No.of.times.90.DPD.or.worse.in.last.6.months[j]
+        woepos <- which(val>= IVTable$min & val <= IVTable$max)
+        woeval <- as.numeric(IVTable$WOE[woepos])
+        #Replacement
+        impvar_df$No.of.times.90.DPD.or.worse.in.last.6.months[j] <- woeval
+      }
+      
+      sum(is.na(impvar_df$No.of.times.90.DPD.or.worse.in.last.6.months)) 
