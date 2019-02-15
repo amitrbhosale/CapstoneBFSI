@@ -292,7 +292,7 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
 
-traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
+traindata <- merged_df
 # Create a dataframe with the important variables identified and the dependant variable
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
@@ -751,7 +751,9 @@ rows_df <- nrow(impvar_df)
       # splitting the data between train and test
       set.seed(100)
       
-      indices = sample.split(impvar_df$Performance.Tag.y, SplitRatio = 0.7)
+      impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+      
+      indices = sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.7)
       
       train = impvar_df[indices,]
       
@@ -828,7 +830,7 @@ perform_fn <- function(cutoff)
 #---------------------------------------------------------  
 # Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
 
-s = seq(.905,.99,length=100)
+s = seq(0.905,0.99,length=100)
 
 OUT = matrix(0,100,3)
 
@@ -841,7 +843,7 @@ for(i in 1:100)
 
 # plotting cutoffs 
 plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+axis(1,seq(0.905,1,length=5),seq(0.905,1,length=5),cex.lab=1.5)
 axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT[,2],col="darkgreen",lwd=2)
 lines(s,OUT[,3],col=4,lwd=2)
@@ -851,9 +853,9 @@ legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Sp
 #---------------------------------------------------------    
 cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
 
-# Let's choose a cutoff value of 62.5% for final model
+# Let's choose a cutoff value of 95.3% for final model
 
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= .625, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .953, "no", "yes"))
 
 conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
 
@@ -876,10 +878,36 @@ spec
 Application_Card_Merged <- impvar_df
 
 predictions_logit <- predict(final_model, newdata = Application_Card_Merged[, -16], type = "response")
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.625, "yes", "no"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.953, "no", "yes"))
 
 # Appending the probabilities and response variables to the test data
 
 Application_Card_Merged$predicted_probs <- predictions_logit
 
 Application_Card_Merged$predicted_Performance_tag <- predicted_Performance_tag
+
+Application_Card_Merged$predict_default <- Application_Card_Merged$predicted_probs
+
+Application_Card_Merged$predict_NonDefault <- 1 - Application_Card_Merged$predict_default
+
+Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_default)
+  
+# Score = Offset + ( Factor * log(odds) )
+# Factor = PDO/ln(2)
+# Offset = Score-(Factor*log(odds))
+# PDO = 20, Base Score=400, odds = 10
+
+Factor = 20/log(2)
+#28.8539
+
+Offset = 400 - (28.8539*log(10))
+
+Application_Card_Merged$Score = 333.5614 + (28.8539*Application_Card_Merged$odds)
+
+#Calculating the cut off score for application score
+
+cutoff_odds <- log((1-0.953)/0.953)
+cutoff_score <- 333.5614 + (28.8539*cutoff_odds)
+cutoff_score
+#Cut off Score is 246.7
+
