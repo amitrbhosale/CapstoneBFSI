@@ -758,9 +758,9 @@ rows_df <- nrow(impvar_df)
       test = impvar_df[!(indices),]
       
       
-      #Initial model
-      model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
-      summary(model_1)
+#Initial model
+model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
+summary(model_1)
       
 # Using StepAIC function
 model_2<- stepAIC(model_1, direction="both")
@@ -798,9 +798,9 @@ summary(predictions_logit)
 
 ## Model Evaluation: Logistic Regression
 
-# Let's use the probability cutoff of 50%.
+# Let's use the probability cutoff of 90.5%.
 
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.50, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.905, "no", "yes"))
 test$Performance.Tag.y <- factor(ifelse(test$Performance.Tag.y ==1, "no","yes"))
 
 # Creating confusion matrix for identifying the model evaluation.
@@ -809,16 +809,14 @@ conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, posit
 
 conf
 
-#--------------------------------------------------------- 
-
-#---------------------------------------------------------    
+#-----------------------------------------------------------
 
 # Let's find out the optimal probalility cutoff 
 
 perform_fn <- function(cutoff) 
 {
-  predicted_response <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
-  conf <- confusionMatrix(predicted_response, test$response, positive = "no")
+  predicted_Performance_tag <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
   acc <- conf$overall[1]
   sens <- conf$byClass[1]
   spec <- conf$byClass[2]
@@ -830,7 +828,7 @@ perform_fn <- function(cutoff)
 #---------------------------------------------------------  
 # Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
 
-s = seq(.01,.99,length=100)
+s = seq(.905,.99,length=100)
 
 OUT = matrix(0,100,3)
 
@@ -840,3 +838,48 @@ for(i in 1:100)
 } 
 
 #---------------------------------------------------------    
+
+# plotting cutoffs 
+plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT[,2],col="darkgreen",lwd=2)
+lines(s,OUT[,3],col=4,lwd=2)
+box()
+legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+#---------------------------------------------------------    
+cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
+
+# Let's choose a cutoff value of 62.5% for final model
+
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .625, "no", "yes"))
+
+conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+
+acc <- conf_final$overall[1]
+
+sens <- conf_final$byClass[1]
+
+spec <- conf_final$byClass[2]
+
+acc
+
+sens
+
+spec
+
+#----------------------------End_of_model_buiding----------------------------------------
+
+#----------------------------Creation of application scorecard for merged dataset--------
+
+Application_Card_Merged <- impvar_df
+
+predictions_logit <- predict(final_model, newdata = Application_Card_Merged[, -16], type = "response")
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.625, "yes", "no"))
+
+# Appending the probabilities and response variables to the test data
+
+Application_Card_Merged$predicted_probs <- predictions_logit
+
+Application_Card_Merged$predicted_Performance_tag <- predicted_Performance_tag
