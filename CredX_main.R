@@ -12,6 +12,7 @@ install.packages("ModelMetrics")
 install.packages("generics")
 install.packages("gower")
 install.packages("caret", dependencies = c("Depends", "Suggests"))
+install.packages("caTools")
 install.packages("cowplot")
 install.packages("GGally")
 library(Information)
@@ -25,6 +26,7 @@ library(ModelMetrics)
 library(generics)
 library(gower)
 library(caret)
+library(caTools)
 library(cowplot)
 library(caTools)
 
@@ -774,7 +776,6 @@ model_3 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months +
 summary(model_3)
 vif(model_3)
 
-
 # Removing No.of.trades.opened.in.last.12.months due to high p-value
 
 model_4 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
@@ -785,3 +786,57 @@ summary(model_4)
 vif(model_4)
 
 final_model <- model_4
+
+#---------------------------------------------------------    
+
+# Predicting probabilities of defaulting for the test data
+
+predictions_logit <- predict(final_model, newdata = test[, -16], type = "response")
+summary(predictions_logit)
+
+#--------------------------------------------------------- 
+
+## Model Evaluation: Logistic Regression
+
+# Let's use the probability cutoff of 50%.
+
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.50, "no", "yes"))
+test$Performance.Tag.y <- factor(ifelse(test$Performance.Tag.y ==1, "no","yes"))
+
+# Creating confusion matrix for identifying the model evaluation.
+
+conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+
+conf
+
+#--------------------------------------------------------- 
+
+#---------------------------------------------------------    
+
+# Let's find out the optimal probalility cutoff 
+
+perform_fn <- function(cutoff) 
+{
+  predicted_response <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_response, test$response, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  out <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(out) <- c("sensitivity", "specificity", "accuracy")
+  return(out)
+}
+
+#---------------------------------------------------------  
+# Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
+
+s = seq(.01,.99,length=100)
+
+OUT = matrix(0,100,3)
+
+for(i in 1:100)
+{
+  OUT[i,] = perform_fn(s[i])
+} 
+
+#---------------------------------------------------------    
