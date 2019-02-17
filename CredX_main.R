@@ -15,6 +15,7 @@ install.packages("caret", dependencies = c("Depends", "Suggests"))
 install.packages("caTools")
 install.packages("cowplot")
 install.packages("GGally")
+install.packages("gridExtra")
 library(Information)
 library(rstudioapi)
 library(ggplot2)
@@ -29,6 +30,7 @@ library(caret)
 library(caTools)
 library(cowplot)
 library(caTools)
+library(gridExtra)
 
 #Set working directory to directory of the file
 
@@ -782,6 +784,13 @@ vif(model_4)
 
 final_model <- model_4
 
+p1 <- plot_infotables(IV, IV$Summary$Variable[1],same_scales = TRUE)
+p2 <- plot_infotables(IV, IV$Summary$Variable[4],same_scales = TRUE)
+p3 <- plot_infotables(IV, IV$Summary$Variable[5],same_scales = TRUE)
+p4 <- plot_infotables(IV, IV$Summary$Variable[6],same_scales = TRUE)
+
+grid.arrange(p1,p2,p3,p4)
+
 #---------------------------------------------------------    
 
 # Predicting probabilities of defaulting for the test data
@@ -1076,6 +1085,11 @@ summary(model_2)
 vif(model_2)
 
 final_model_dem <- model_2
+
+p1_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[10],same_scales = TRUE)
+p2_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[6],same_scales = TRUE)
+
+grid.arrange(p1_dem,p2_dem)
 
 #---------------------------------------------------------    
 
