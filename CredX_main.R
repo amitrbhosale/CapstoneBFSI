@@ -886,9 +886,9 @@ Application_Card_Merged$predicted_probs <- predictions_logit
 
 Application_Card_Merged$predicted_Performance_tag <- predicted_Performance_tag
 
-Application_Card_Merged$predict_default <- Application_Card_Merged$predicted_probs
+Application_Card_Merged$predict_NonDefault <- Application_Card_Merged$predicted_probs
 
-Application_Card_Merged$predict_NonDefault <- 1 - Application_Card_Merged$predict_default
+Application_Card_Merged$predict_Default <- 1 - Application_Card_Merged$predict_NonDefault
 
 Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_default)
   
@@ -902,12 +902,12 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-Application_Card_Merged$Score = 333.5614 + (28.8539*Application_Card_Merged$odds)
+Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
 
 #Calculating the cut off score for application score
 
 cutoff_odds <- log((1-0.953)/0.953)
-cutoff_score <- 333.5614 + (28.8539*cutoff_odds)
+cutoff_score <- Offset + (Factor*cutoff_odds)
 cutoff_score
 #Cut off Score is 246.7
 
