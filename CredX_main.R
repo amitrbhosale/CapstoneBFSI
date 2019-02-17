@@ -96,7 +96,6 @@ Credit_Bureau_data <- Credit_Bureau_data[!duplicated(Credit_Bureau_data$Applicat
 
 merged_df <- merge(Demographic_data,Credit_Bureau_data,by.x = "Application.ID", by.y = "Application.ID")
 
-
 nrow(merged_df)
 
 #Need to perform WOE and IV Analysis, The cleaning would be done using the WOE transformation.
