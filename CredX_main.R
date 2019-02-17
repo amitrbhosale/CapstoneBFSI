@@ -159,7 +159,6 @@ for (i in 1:nrow(merged_df)) {
 length(which(merged_df$Performance.Tag.y==1))
 length(which(merged_df$Performance.Tag.y==0))
 
-
 #Remove NAs from Dependant Variable as it won't allow execution of IV functions.
 traindata <- subset(merged_df, is.na(merged_df$Performance.Tag.y)==FALSE)
 
@@ -182,7 +181,6 @@ predictor_variables
 
 sapply(merged_df, function(x) sum(is.na(x)))
 
-
 IV$Tables$Avgas.CC.Utilization.in.last.12.months
 val <- IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")]
 napos <- which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")
@@ -204,7 +202,6 @@ sum(is.na(merged_df$Avgas.CC.Utilization.in.last.12.months))
 # Checking the second predictor variable No.of.trades.opened.in.last.12.months
 
 IV$Tables$No.of.trades.opened.in.last.12.months
-
 
 # Checking the third predictor variable No.of.PL.trades.opened.in.last.12.months
 
@@ -234,10 +231,8 @@ replacement <- as.numeric(substr(IV$Tables$Outstanding.Balance[repos,1],a+1,b-1)
 #Replacing the value where NA's are located in the original dataset
 merged_df$Outstanding.Balance[which(is.na(merged_df$Outstanding.Balance))] <- replacement
 
-
 # Checking another predictor variable No.of.times.30.DPD.or.worse.in.last.6.months
 IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months
-
 
 # Checking another predictor variable Total.No.of.Trades
 
@@ -296,7 +291,6 @@ traindata <- merged_df
 # Create a dataframe with the important variables identified and the dependant variable
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
-
 
 # WOE replacement in the impvar_df to be carried out.
 
@@ -848,7 +842,7 @@ axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT[,2],col="darkgreen",lwd=2)
 lines(s,OUT[,3],col=4,lwd=2)
 box()
-legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
 
 #---------------------------------------------------------    
 cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
@@ -1095,7 +1089,7 @@ summary(predictions_logit_dem)
 
 ## Model Evaluation: Logistic Regression
 
-# Let's use the probability cutoff of 90.5%.
+# Let's use the probability cutoff of 93%.
 
 predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.93, "no", "yes"))
 test$Performance.Tag <- factor(ifelse(test$Performance.Tag ==1, "no","yes"))
@@ -1143,7 +1137,7 @@ axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT[,2],col="darkgreen",lwd=2)
 lines(s,OUT[,3],col=4,lwd=2)
 box()
-legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
 
 #---------------------------------------------------------    
 cutoff_dem <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
