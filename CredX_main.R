@@ -16,6 +16,10 @@ install.packages("caTools")
 install.packages("cowplot")
 install.packages("GGally")
 install.packages("gridExtra")
+install.packages("rpart")
+install.packages("rattle")
+install.packages("rpart.plot")
+library(rpart.plot)
 library(Information)
 library(rstudioapi)
 library(ggplot2)
@@ -31,6 +35,8 @@ library(caTools)
 library(cowplot)
 library(caTools)
 library(gridExtra)
+library(rpart)
+library(rattle)
 
 #Set working directory to directory of the file
 
@@ -113,12 +119,12 @@ sum(ifelse(merged_df$Performance.Tag.x == merged_df$Performance.Tag.y, 1,0)  | i
 # Removing the redundant column
 merged_df$Performance.Tag.x <- NULL
 
-<<<<<<< HEAD
+#<<<<<<< HEAD
 #------------------------------------------EDA to find the important variables-----------------------------------
 
 #Filtering only defaulters data
 EDA_data <- merged_df
-=======
+#=======
   # Fixing the negative values for some variables which are outliers.
   
   quantile(merged_df$Age,seq(0,1,0.01))
@@ -145,7 +151,7 @@ outlier$out
 
 #Filtering only defaulters data for univariate analysis
 Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
->>>>>>> b675e828e94b0908f07dbe75bc13a480eb5c060c
+#>>>>>>> b675e828e94b0908f07dbe75bc13a480eb5c060c
 
 #Finding no of NAs in EDA_data dataframe
 sum(is.na(EDA_data$Performance.Tag.y))
@@ -1303,4 +1309,72 @@ cutoff_score_dem
 
 #---------------End of application Score card code for Demographic data----------------
 
+## Model Building- Model 2: Decision Tree
 
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+indices = sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.7)
+
+train_dt = impvar_without_NA_df[indices,]
+
+test_dt = impvar_without_NA_df[!(indices),]
+
+nrow(train_dt)/nrow(impvar_without_NA_df)
+
+nrow(test_dt)/nrow(impvar_without_NA_df)
+
+#---------------------------------------------------------    
+
+# building a tree with arbitrary minsplit and cp
+tree_1 <-  rpart(Performance.Tag.y ~ ., data=train_dt,control=rpart.control(minsplit=5,cp=0.0001),method = "class")
+plot(tree_1)
+
+# This is clearly an overfitted tree
+
+# Increasing the minsplit two fold to 10 
+tree_2 <-  rpart(Performance.Tag.y ~ ., data=train_dt,control=rpart.control(minsplit=10,cp=0.0001),method = "class")
+plot(tree_2)
+
+# This one is better, but still looks a little too complex
+
+fancyRpartPlot(tree_2)
+
+# Listing the variables by importance:
+tree_2$variable.importance
+
+# Increasing the minsplit two fold to 15 
+tree_3 <-  rpart(Performance.Tag.y ~ ., data=train_dt,control=rpart.control(minsplit=15,cp=0.0001),method = "class")
+plot(tree_3)
+
+# Increasing the minsplit for tree_6
+tree_4 <- rpart(Performance.Tag.y ~ ., data=train_dt,control=rpart.control(minsplit=18,cp=0.0001),method = "class")
+plot(tree_4)
+fancyRpartPlot(tree_4)
+tree_4$variable.importance
+
+#---------------------------------------------------------    
+## Model Evaluation for tree_3 and tree_3
+# using test data from now on
+# tree_4
+tree_3_pred <- predict(tree_3, test_dt[, -16],type = "class")
+tree_3_pred <- factor(ifelse(tree_3_pred==1,"no","yes"))
+test_dt$Performance.Tag.y <- factor(ifelse(test_dt$Performance.Tag.y==1,"no","yes"))
+confusionMatrix(tree_3_pred, test_dt[, 16], positive = "no")
+
+# Accuracy is 95.65%, sensitivity is 99.85%, specificity is 0.3%
+
+# tree_4
+tree_4_pred <- predict(tree_4, test_dt[, -16], type = "class")
+tree_4_pred <- factor(ifelse(tree_4_pred==1,"no","yes"))
+confusionMatrix(tree_4_pred, test_dt[, 16], positive = "no")
+
+# Accuracy is 95.73%, sensitivity is 99.99%, specificity is 0%
+
+# the model is much better than logistic regression since the accuracy increases significantly.
+# But we should need to build a random forest model since specificity is affected immensely.
+
+#---------------------------------------------------------    
+
+#---------------------------------------------------------  
