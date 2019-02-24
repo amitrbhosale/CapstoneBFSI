@@ -892,7 +892,11 @@ Application_Card_Merged$predict_NonDefault <- Application_Card_Merged$predicted_
 
 Application_Card_Merged$predict_Default <- 1 - Application_Card_Merged$predict_NonDefault
 
-Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_default)
+
+
+  Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_Default)
+
+
   
 # Score = Offset + ( Factor * log(odds) )
 # Factor = PDO/ln(2)
@@ -904,14 +908,17 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
+
+  Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
+
+
 
 #Calculating the cut off score for application score
 
-cutoff_odds <- log((1-0.953)/0.953)
+cutoff_odds <- log(0.953/(1-0.953))
 cutoff_score <- Offset + (Factor*cutoff_odds)
 cutoff_score
-#Cut off Score is 246.7
+#Cut off Score is 420.39
 
 #-------------------------------Demographic data WOE, IV and model building-------
 #Need to perform WOE and IV Analysis
@@ -1192,7 +1199,12 @@ Application_Card_dem_Merged$predict_NonDefault <- Application_Card_dem_Merged$pr
 
 Application_Card_dem_Merged$predict_Default <- 1 - Application_Card_dem_Merged$predict_NonDefault
 
-Application_Card_dem_Merged$Odds <-  log(Application_Card_dem_Merged$predict_NonDefault/Application_Card_dem_Merged$predict_Default)
+
+
+  Application_Card_dem_Merged$Odds <-  log(Application_Card_dem_Merged$predict_NonDefault/Application_Card_dem_Merged$predict_Default)  
+
+
+
 
 # Score = Offset + ( Factor * log(odds) )
 # Factor = PDO/ln(2)
@@ -1204,14 +1216,16 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)
+
+  Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)  
+
 
 #Calculating the cut off score for application score
 
-cutoff_odds_dem <- log((1-0.9566)/0.9566)
+cutoff_odds_dem <- log(0.9566/(1-0.9566))
 cutoff_score_dem <- Offset + (Factor*cutoff_odds_dem)
 cutoff_score_dem
-#Cut off Score is 244.31
+#Cut off Score is 422.8044
 
 #---------------End of application Score card code for Demographic data----------------
 
