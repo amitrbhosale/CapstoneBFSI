@@ -17,6 +17,7 @@ install.packages("cowplot")
 install.packages("GGally")
 install.packages("gridExtra")
 install.packages("purrr")
+install.packages("h2o") #For multi-threading
 library(Information)
 library(rstudioapi)
 library(ggplot2)
@@ -25,6 +26,7 @@ library(MASS)
 library(car)
 library(e1071)
 library(ModelMetrics)
+library(h2o)
 library(generics)
 library(gower)
 library(caret)
@@ -34,6 +36,7 @@ library(caTools)
 library(gridExtra)
 library(purrr)
 
+h2o.init(nthreads = 4)
 #Set working directory to directory of the file
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -756,3 +759,4 @@ cutoff_score_dem
 #---------------End of application Score card code for Demographic data----------------
 
 
+h2o.shutdown(prompt = FALSE)
