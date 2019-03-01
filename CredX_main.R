@@ -170,8 +170,6 @@ ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
 ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
 
 ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
-=======
-
 
 #Finding no of NAs in EDA_data dataframe
 sum(is.na(EDA_data$Performance.Tag.y))
