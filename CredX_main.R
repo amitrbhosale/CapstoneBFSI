@@ -22,6 +22,8 @@ install.packages("rpart")
 install.packages("rattle")
 install.packages("rpart.plot")
 install.packages("randomForest")
+install.packages("DMwR")
+library(DMwR)
 library(randomForest)
 library(rpart.plot)
 library(Information)
@@ -861,10 +863,7 @@ Application_Card_dem_Merged$predict_NonDefault <- Application_Card_dem_Merged$pr
 
 Application_Card_dem_Merged$predict_Default <- 1 - Application_Card_dem_Merged$predict_NonDefault
 
-
-
-
-  Application_Card_dem_Merged$Odds <-  log(Application_Card_dem_Merged$predict_NonDefault/Application_Card_dem_Merged$predict_Default)  
+Application_Card_dem_Merged$Odds <-  log(Application_Card_dem_Merged$predict_NonDefault/Application_Card_dem_Merged$predict_Default)  
 
 # Score = Offset + ( Factor * log(odds) )
 # Factor = PDO/ln(2)
@@ -953,6 +952,26 @@ confusionMatrix(tree_4_pred, test_dt[, 16], positive = "no")
 # the model is much better than logistic regression since the accuracy increases significantly.
 # But we should need to build a random forest model since specificity is affected immensely.
 
+#Lets balance the data using SMOTE and try building the model for the balanced dataset
+
+summary(factor(train_dt$Performance.Tag.y))
+train_dt$Performance.Tag.y <- as.factor(train_dt$Performance.Tag.y)
+
+Smoted_train_dt <- SMOTE(Performance.Tag.y~.,data = train_dt,perc.over = 120,perc.under = 200)
+
+summary(Smoted_train_dt$Performance.Tag.y)
+
+tree_5 <- rpart(Performance.Tag.y~.,data = Smoted_train_dt,control = rpart.control(minsplit = 15,cp=0.0001),method = "class")
+
+tree_5_pred <- predict(tree_5,test_dt[,-16],type = "class")
+tree_5_pred <- factor(ifelse(tree_5_pred==1,"no","yes"))
+Smoted_train_dt$Performance.Tag.y <- factor(ifelse(Smoted_train_dt$Performance.Tag.y==1,"no","yes"))
+confusionMatrix(tree_5_pred,test_dt[,16],positive = "no")
+
+#Accuracy = 0.70
+#Sensitivity = 0.71
+#Specificity = 0.38
+#Even theough accuracy decreases, the model provides a better specificity compared to model built on unbalanced data
 #---------------------------------------------------------    
 
 #Model Building - Random Forest
