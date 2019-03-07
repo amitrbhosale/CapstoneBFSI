@@ -1071,3 +1071,108 @@ importance <- Credit_rf$importance
 
 importance <- data.frame(importance)
 h2o.shutdown(prompt = FALSE) 
+
+#-----------------Random forest model for Balanced data-------------------
+
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+impvar_without_NA_df$Performance.Tag.y <- as.factor(ifelse(impvar_without_NA_df$Performance.Tag.y ==1,"no","yes"))
+split_indices <- sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.70)
+
+train_rf <- impvar_without_NA_df[split_indices, ]
+
+test_rf <- impvar_without_NA_df[!split_indices, ]
+
+nrow(train_rf)/nrow(impvar_without_NA_df)
+
+nrow(test_rf)/nrow(impvar_without_NA_df)
+
+#balncing the data using SMOTE function
+
+summary(factor(train_rf$Performance.Tag.y))
+train_rf$Performance.Tag.y <- as.factor(train_rf$Performance.Tag.y)
+
+Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,perc.under = 200,k=20)
+
+summary(Smoted_train_rf$Performance.Tag.y)
+
+# Building the model 
+
+Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 5)
+
+# Predict response for test data
+
+rf_pred <- predict(Credit_rf, test_rf[, -16], type = "prob")
+
+#---------------------------------------------------------    
+
+# Cutoff for randomforest to assign yes or no
+
+perform_fn_rf <- function(cutoff) 
+{
+  predicted_Performance_tag <- as.factor(ifelse(rf_pred[, 1] >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test_rf$Performance.Tag.y, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
+  return(OUT_rf)
+}
+
+#---------------------------------------------------------    
+
+# creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
+s = seq(.01,.99,length=100)
+
+OUT_rf = matrix(0,100,3)
+
+# calculate the sens, spec and acc for different cutoff values
+
+for(i in 1:100)
+{
+  OUT_rf[i,] = perform_fn_rf(s[i])
+} 
+
+#---------------------------------------------------------    
+
+# plotting cutoffs
+
+plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
+lines(s,OUT_rf[,3],col=4,lwd=2)
+box()
+
+#legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
+
+# The plot shows that cutoff value of around 62.3% optimises sensitivity and accuracy
+
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= cutoff_rf, "no", "yes"))
+
+conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
+
+conf_forest
+
+# Sensitivity
+conf_forest$byClass[1]
+#0.603
+
+# Specificity 
+conf_forest$byClass[2]
+#0.611
+
+# Accuracy 
+conf_forest$overall[1]
+#0.603
+
+# Final RF important variables
+importance <- Credit_rf$importance 
+
+importance <- data.frame(importance)
+h2o.shutdown(prompt = FALSE) 
