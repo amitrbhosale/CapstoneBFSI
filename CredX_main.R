@@ -1176,3 +1176,164 @@ importance <- Credit_rf$importance
 
 importance <- data.frame(importance)
 h2o.shutdown(prompt = FALSE) 
+
+#-----------------------------------------------------------------------------------------------------------
+# Modelling Logistic regression for balanced data
+
+########################################################################
+# splitting the data between train and test
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+indices = sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.7)
+
+train = impvar_without_NA_df[indices,]
+
+test = impvar_without_NA_df[!(indices),]
+
+#balncing the data using SMOTE function
+
+summary(factor(train$Performance.Tag.y))
+train$Performance.Tag.y <- as.factor(train$Performance.Tag.y)
+
+Smoted_train_lg <- SMOTE(Performance.Tag.y~.,data = train,perc.over = 100,perc.under = 200,k=20)
+
+summary(Smoted_train_lg$Performance.Tag.y)
+
+#Initial model
+model_1 = glm(Performance.Tag.y ~ ., data = Smoted_train_lg, family = "binomial")
+summary(model_1)
+
+# Using StepAIC function
+model_2<- stepAIC(model_1, direction="both")
+
+summary(model_2)
+vif(model_2)
+
+# Removing No.of.PL.trades.opened.in.last.12.months due to high vif and relatively high p-value
+model_3 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
+                No.of.PL.trades.opened.in.last.12.months + 
+                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.PL.trades.opened.in.last.6.months + No.of.times.60.DPD.or.worse.in.last.6.months, 
+               family = "binomial", data = Smoted_train_lg)
+summary(model_3)
+vif(model_3)
+
+# Removing No.of.times.60.DPD.or.worse.in.last.6.months due to high p-value and VIF
+
+model_4 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + 
+                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.PL.trades.opened.in.last.6.months , 
+               family = "binomial", data = Smoted_train_lg)
+summary(model_4)
+vif(model_4)
+
+# Removing No.of.PL.trades.opened.in.last.12.months due to high p-value and VIF
+
+model_5 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months +
+                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.PL.trades.opened.in.last.6.months , 
+               family = "binomial", data = Smoted_train_lg)
+summary(model_5)
+vif(model_5)
+
+# Removing No.of.PL.trades.opened.in.last.6.months due to high p-value and VIF
+
+model_6 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months +
+                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
+               family = "binomial", data = Smoted_train_lg)
+summary(model_6)
+vif(model_6)
+
+final_model <- model_6
+
+#---------------------------------------------------------    
+
+# Predicting probabilities of defaulting for the test data
+
+predictions_logit <- predict(final_model, newdata = test[, -16], type = "response")
+summary(predictions_logit)
+
+#--------------------------------------------------------- 
+
+## Model Evaluation: Logistic Regression
+
+# Let's use the probability cutoff of 90.5%.
+
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.50, "no", "yes"))
+test$Performance.Tag.y <- factor(ifelse(test$Performance.Tag.y ==1, "no","yes"))
+summary(test$Performance.Tag.y)
+summary(predicted_Performance_tag)
+# Creating confusion matrix for identifying the model evaluation.
+
+conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+
+conf
+
+#-----------------------------------------------------------
+
+# Let's find out the optimal probalility cutoff 
+
+perform_fn <- function(cutoff) 
+{
+  predicted_Performance_tag <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  out <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(out) <- c("sensitivity", "specificity", "accuracy")
+  return(out)
+}
+
+#---------------------------------------------------------  
+# Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
+
+s = seq(0.001,0.99,length=100)
+
+OUT = matrix(0,100,3)
+
+for(i in 1:100)
+{
+  OUT[i,] = perform_fn(s[i])
+} 
+
+#---------------------------------------------------------    
+
+# plotting cutoffs 
+plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0.001,1,length=5),seq(0.001,1,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT[,2],col="darkgreen",lwd=2)
+lines(s,OUT[,3],col=4,lwd=2)
+box()
+legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+#---------------------------------------------------------    
+cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
+
+# Let's choose a cutoff value of 46% for final model
+
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .46, "no", "yes"))
+
+conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+
+acc <- conf_final$overall[1]
+
+sens <- conf_final$byClass[1]
+
+spec <- conf_final$byClass[2]
+
+acc
+
+sens
+
+spec
+
+#----------------------------End_of_model_buiding----------------------------------------
