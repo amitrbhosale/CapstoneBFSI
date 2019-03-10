@@ -1098,9 +1098,11 @@ Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,per
 
 summary(Smoted_train_rf$Performance.Tag.y)
 
+tuneRF(Smoted_train_rf[,-16],Smoted_train_rf[,16])
+
 # Building the model 
 
-Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 5)
+Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 6,nodesize=42)
 
 # Predict response for test data
 
@@ -1151,9 +1153,9 @@ box()
 
 cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
 
-# The plot shows that cutoff value of around 62.3% optimises sensitivity and accuracy
+# The plot shows that cutoff value of around 62% optimises sensitivity and accuracy
 
-predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= cutoff_rf, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.62, "no", "yes"))
 
 conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
 
