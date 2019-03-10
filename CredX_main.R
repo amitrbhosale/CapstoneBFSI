@@ -629,13 +629,8 @@ Application_Card_Merged$predict_NonDefault <- Application_Card_Merged$predicted_
 
 Application_Card_Merged$predict_Default <- 1 - Application_Card_Merged$predict_NonDefault
 
+Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_Default)
 
-
-
-  Application_Card_Merged$odds <-  log(Application_Card_Merged$predict_NonDefault/Application_Card_Merged$predict_Default)
-
-
-  
 # Score = Offset + ( Factor * log(odds) )
 # Factor = PDO/ln(2)
 # Offset = Score-(Factor*log(odds))
@@ -646,11 +641,7 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-
-
-  Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
-
-
+Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
 
 #Calculating the cut off score for application score
 
@@ -1163,21 +1154,59 @@ conf_forest
 
 # Sensitivity
 conf_forest$byClass[1]
-#0.603
+#0.624
 
 # Specificity 
 conf_forest$byClass[2]
-#0.611
+#0.630
 
 # Accuracy 
 conf_forest$overall[1]
-#0.603
+#0.624
 
 # Final RF important variables
 importance <- Credit_rf$importance 
 
 importance <- data.frame(importance)
-h2o.shutdown(prompt = FALSE) 
+h2o.shutdown(prompt = FALSE)
+
+#------------Application Scorecard for balanced data random forest model------------------
+
+Application_Card_rf <- impvar_df
+
+predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf[, -16], type = "prob")
+predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.62, "no", "yes"))
+
+# Appending the probabilities and response variables to the test data
+
+Application_Card_rf$predicted_probs <- predictions_rf
+
+Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
+
+Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs
+
+Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
+
+Application_Card_rf$odds <-  log(Application_Card_rf$predict_NonDefault/Application_Card_rf$predict_Default)
+
+# Score = Offset + ( Factor * log(odds) )
+# Factor = PDO/ln(2)
+# Offset = Score-(Factor*log(odds))
+# PDO = 20, Base Score=400, odds = 10
+
+Factor = 20/log(2)
+#28.8539
+
+Offset = 400 - (28.8539*log(10))
+
+Application_Card_rf$Score = Offset + (Factor*Application_Card_rf$odds)
+
+#Calculating the cut off score for application score
+
+cutoff_odds <- log(0.62/(1-0.62))
+cutoff_score <- Offset + (Factor*cutoff_odds)
+cutoff_score
+#Cut off Score is 347.68
 
 #-----------------------------------------------------------------------------------------------------------
 # Modelling Logistic regression for balanced data
