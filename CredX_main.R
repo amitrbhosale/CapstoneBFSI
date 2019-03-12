@@ -442,7 +442,7 @@ woe_replace <- function(dataframe, IV)
       # Perform following action for every row - for replacement
       for(j in 1: rows_df)
       {
-        val <- df[j,i]
+        val <- as.numeric(df[j,i])
         woepos <- which(val>= IVTable$min & val<= IVTable$max)
         woeval <- IVTable$WOE[woepos]
         #Replacement
