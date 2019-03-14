@@ -291,7 +291,7 @@ All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-Al
 ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_hline(yintercept = 0.1, color = "red")  + xlab("Predictor Variable") + ylab("IV") + ggtitle("IV for Predictor variable")
 
 predictor_variables <- data.frame(IV$Summary)
-predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
+predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.04)
 
 predictor_variables
 
@@ -403,13 +403,25 @@ IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months
 
 IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months
 
+# Checking predictor variable No.of.months.in.current.residenc
+
+IV$Tables$No.of.months.in.current.residenc
+
+# Checking the predictor variable Income
+
+IV$Tables$Income
+
+#Saving the merged dataframe in traindata
 traindata <- merged_df
+
 # Create a dataframe with the important variables identified and the dependant variable
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
 
-
 # WOE replacement in the impvar_df to be carried out, we are defining woe_replace function.
+
+#impvar_df$Income <- ceiling(impvar_df$Income)
+#impvar_df$Income <- as.integer(impvar_df$Income)
 
 woe_replace <- function(dataframe, IV)
 {
@@ -438,11 +450,11 @@ woe_replace <- function(dataframe, IV)
       
       IVTable$max <- as.numeric(substr(IVTable[,colname], IVTable$max1+1, IVTable$max2-1))
       
-      
+  
       # Perform following action for every row - for replacement
       for(j in 1: rows_df)
       {
-        val <- df[j,i]
+        val <- as.numeric(df[j,i])
         woepos <- which(val>= IVTable$min & val<= IVTable$max)
         woeval <- IVTable$WOE[woepos]
         #Replacement
@@ -1089,15 +1101,47 @@ Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,per
 
 summary(Smoted_train_rf$Performance.Tag.y)
 
-tuneRF(Smoted_train_rf[,-16],Smoted_train_rf[,16])
+Smoted_train_rf <- Smoted_train_rf[,-16]
+
+tuneRF(Smoted_train_rf[,-17],Smoted_train_rf[,17])
 
 # Building the model 
+test_rf <- test_rf[,-16]
 
-Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 6,nodesize=42)
+Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, 
+                          mtry = 2,nodesize=25,ntrees=2000)
+
+#10 folds repeat 3 times
+#library(parallel)
+#numcores <- detectCores()
+#cl <- makeCluster(numcores)
+# parLapply(cl, 2:4,
+#           function(exponent)
+#             2^exponent)
+# 
+# control <- trainControl(method='repeatedcv', 
+#                         number=10, 
+#                         repeats=3)
+# #Metric compare model is Accuracy
+# metric <- "Accuracy"
+# #set.seed(123)
+# #Number randomely variable selected is mtry
+# mtry <- c(3:10)
+# tunegrid <- expand.grid(.mtry=mtry)
+# rf_default <- train(Performance.Tag.y~., 
+#                     data=Smoted_train_rf, 
+#                     method='rf', 
+#                     metric='Accuracy', 
+#                     tuneGrid=tunegrid, 
+#                     trControl=control)
+# print(rf_default)
+# 
+# stopCluster(cl)
+
 
 # Predict response for test data
 
-rf_pred <- predict(Credit_rf, test_rf[, -16], type = "prob")
+rf_pred <- predict(Credit_rf, test_rf[, -17], type = "prob")
 
 #---------------------------------------------------------    
 
@@ -1139,7 +1183,7 @@ axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
 lines(s,OUT_rf[,3],col=4,lwd=2)
 box()
-
+OUT_rf
 #legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
 
 cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
@@ -1148,7 +1192,7 @@ cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
 
 predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.62, "no", "yes"))
 
-conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
+conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 17], positive = "no")
 
 conf_forest
 
