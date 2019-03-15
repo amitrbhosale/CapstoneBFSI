@@ -46,7 +46,7 @@ library(purrr)
 h2o.init(nthreads = 4)
 library(rpart)
 library(rattle)
-
+library(DMwR)
 
 #Set working directory to directory of the file
 
@@ -138,9 +138,9 @@ quantile(merged_df$Age,seq(0,1,0.01))
 #Filtering only defaulters data
 EDA_data <- merged_df
 
-  # Fixing the negative values for some variables which are outliers.
-  
-  quantile(merged_df$Age,seq(0,1,0.01))
+# Fixing the negative values for some variables which are outliers.
+
+quantile(merged_df$Age,seq(0,1,0.01))
 
 
 # We can see a jump in the Age variable from -3 to 27 and Age cannot be negative, therefore we are treating this outlier.
@@ -291,7 +291,7 @@ All_IVs$Variable <- factor(All_IVs$Variable, levels = All_IVs$Variable[order(-Al
 ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + geom_hline(yintercept = 0.1, color = "red")  + xlab("Predictor Variable") + ylab("IV") + ggtitle("IV for Predictor variable")
 
 predictor_variables <- data.frame(IV$Summary)
-predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.04)
+predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
 
 predictor_variables
 
@@ -450,7 +450,7 @@ woe_replace <- function(dataframe, IV)
       
       IVTable$max <- as.numeric(substr(IVTable[,colname], IVTable$max1+1, IVTable$max2-1))
       
-  
+      
       # Perform following action for every row - for replacement
       for(j in 1: rows_df)
       {
@@ -470,24 +470,24 @@ woe_replace <- function(dataframe, IV)
 impvar_df <- woe_replace(impvar_df,IV)
 
 # Modelling Logistic regression
-      
+
 ########################################################################
-      # splitting the data between train and test
-      set.seed(100)
-      
-      impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
-      
-      indices = sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.7)
-      
-      train = impvar_df[indices,]
-      
-      test = impvar_df[!(indices),]
-      
-      
+# splitting the data between train and test
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+indices = sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.7)
+
+train = impvar_df[indices,]
+
+test = impvar_df[!(indices),]
+
+
 #Initial model
 model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
 summary(model_1)
-   
+
 # Modelling Logistic regression
 
 ########################################################################
@@ -518,7 +518,7 @@ vif(model_2)
 model_3 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
                  No.of.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
-                 family = "binomial", data = train)
+               family = "binomial", data = train)
 summary(model_3)
 vif(model_3)
 
@@ -878,7 +878,7 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-  Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)  
+Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)  
 
 #Calculating the cut off score for application score
 
@@ -1075,184 +1075,7 @@ importance <- Credit_rf$importance
 importance <- data.frame(importance)
 h2o.shutdown(prompt = FALSE) 
 
-#-----------------Random forest model for Balanced data-------------------
-
-set.seed(100)
-
-impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
-
-impvar_without_NA_df$Performance.Tag.y <- as.factor(ifelse(impvar_without_NA_df$Performance.Tag.y ==1,"no","yes"))
-split_indices <- sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.70)
-
-train_rf <- impvar_without_NA_df[split_indices, ]
-
-test_rf <- impvar_without_NA_df[!split_indices, ]
-
-nrow(train_rf)/nrow(impvar_without_NA_df)
-
-nrow(test_rf)/nrow(impvar_without_NA_df)
-
-#balncing the data using SMOTE function
-
-summary(factor(train_rf$Performance.Tag.y))
-train_rf$Performance.Tag.y <- as.factor(train_rf$Performance.Tag.y)
-
-Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,perc.under = 200,k=20)
-
-summary(Smoted_train_rf$Performance.Tag.y)
-
-Smoted_train_rf <- Smoted_train_rf[,-16]
-
-tuneRF(Smoted_train_rf[,-17],Smoted_train_rf[,17])
-
-# Building the model 
-test_rf <- test_rf[,-16]
-
-Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, 
-                          mtry = 2,nodesize=25,ntrees=2000)
-
-#10 folds repeat 3 times
-#library(parallel)
-#numcores <- detectCores()
-#cl <- makeCluster(numcores)
-# parLapply(cl, 2:4,
-#           function(exponent)
-#             2^exponent)
-# 
-# control <- trainControl(method='repeatedcv', 
-#                         number=10, 
-#                         repeats=3)
-# #Metric compare model is Accuracy
-# metric <- "Accuracy"
-# #set.seed(123)
-# #Number randomely variable selected is mtry
-# mtry <- c(3:10)
-# tunegrid <- expand.grid(.mtry=mtry)
-# rf_default <- train(Performance.Tag.y~., 
-#                     data=Smoted_train_rf, 
-#                     method='rf', 
-#                     metric='Accuracy', 
-#                     tuneGrid=tunegrid, 
-#                     trControl=control)
-# print(rf_default)
-# 
-# stopCluster(cl)
-
-
-# Predict response for test data
-
-rf_pred <- predict(Credit_rf, test_rf[, -17], type = "prob")
-
-#---------------------------------------------------------    
-
-# Cutoff for randomforest to assign yes or no
-
-perform_fn_rf <- function(cutoff) 
-{
-  predicted_Performance_tag <- as.factor(ifelse(rf_pred[, 1] >= cutoff, "no", "yes"))
-  conf <- confusionMatrix(predicted_Performance_tag, test_rf$Performance.Tag.y, positive = "no")
-  acc <- conf$overall[1]
-  sens <- conf$byClass[1]
-  spec <- conf$byClass[2]
-  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
-  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
-  return(OUT_rf)
-}
-
-#---------------------------------------------------------    
-
-# creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
-s = seq(.01,.99,length=100)
-
-OUT_rf = matrix(0,100,3)
-
-# calculate the sens, spec and acc for different cutoff values
-
-for(i in 1:100)
-{
-  OUT_rf[i,] = perform_fn_rf(s[i])
-} 
-
-#---------------------------------------------------------    
-
-# plotting cutoffs
-
-plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
-axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
-lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
-lines(s,OUT_rf[,3],col=4,lwd=2)
-box()
-OUT_rf
-#legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
-
-cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
-
-# The plot shows that cutoff value of around 62% optimises sensitivity and accuracy
-
-predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.62, "no", "yes"))
-
-conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 17], positive = "no")
-
-conf_forest
-
-# Sensitivity
-conf_forest$byClass[1]
-#0.624
-
-# Specificity 
-conf_forest$byClass[2]
-#0.630
-
-# Accuracy 
-conf_forest$overall[1]
-#0.624
-
-# Final RF important variables
-importance <- Credit_rf$importance 
-
-importance <- data.frame(importance)
-h2o.shutdown(prompt = FALSE)
-
-#------------Application Scorecard for balanced data random forest model------------------
-
-Application_Card_rf <- impvar_df
-
-predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf[, -16], type = "prob")
-predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.62, "no", "yes"))
-
-# Appending the probabilities and response variables to the test data
-
-Application_Card_rf$predicted_probs <- predictions_rf
-
-Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
-
-Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs
-
-Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
-
-Application_Card_rf$odds <-  log(Application_Card_rf$predict_NonDefault/Application_Card_rf$predict_Default)
-
-# Score = Offset + ( Factor * log(odds) )
-# Factor = PDO/ln(2)
-# Offset = Score-(Factor*log(odds))
-# PDO = 20, Base Score=400, odds = 10
-
-Factor = 20/log(2)
-#28.8539
-
-Offset = 400 - (28.8539*log(10))
-
-Application_Card_rf$Score = Offset + (Factor*Application_Card_rf$odds)
-
-#Calculating the cut off score for application score
-
-cutoff_odds <- log(0.62/(1-0.62))
-cutoff_score <- Offset + (Factor*cutoff_odds)
-cutoff_score
-#Cut off Score is 347.68
-
-#-----------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
 # Modelling Logistic regression for balanced data
 
 ########################################################################
@@ -1288,7 +1111,7 @@ vif(model_2)
 
 # Removing No.of.PL.trades.opened.in.last.12.months due to high vif and relatively high p-value
 model_3 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
-                No.of.PL.trades.opened.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + 
                  No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
                  No.of.PL.trades.opened.in.last.6.months + No.of.times.60.DPD.or.worse.in.last.6.months, 
@@ -1411,4 +1234,267 @@ sens
 
 spec
 
-#----------------------------End_of_model_buiding----------------------------------------
+#----------------------------End_of_LR_model_buiding for balanced data----------------------------
+
+#-----------------------------Random forest model for Balanced data-------------------------------
+
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+impvar_without_NA_df$Performance.Tag.y <- as.factor(ifelse(impvar_without_NA_df$Performance.Tag.y ==1,"no","yes"))
+split_indices <- sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.70)
+
+train_rf <- impvar_without_NA_df[split_indices, ]
+
+test_rf <- impvar_without_NA_df[!split_indices, ]
+
+nrow(train_rf)/nrow(impvar_without_NA_df)
+
+nrow(test_rf)/nrow(impvar_without_NA_df)
+
+#balncing the data using SMOTE function
+
+summary(factor(train_rf$Performance.Tag.y))
+train_rf$Performance.Tag.y <- as.factor(train_rf$Performance.Tag.y)
+
+Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,perc.under = 200,k=20)
+
+summary(Smoted_train_rf$Performance.Tag.y)
+
+tuneRF(Smoted_train_rf[,-16],Smoted_train_rf[,16])
+
+# Building the model 
+
+Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 1,nodesize=20,ntree=500,importance=TRUE)
+
+#10 folds repeat 3 times
+library(parallel)
+numcores <- detectCores()
+cl <- makeCluster(numcores)
+parLapply(cl, 2:4,
+          function(exponent)
+            2^exponent)
+
+control <- trainControl(method='repeatedcv',
+                        number=10,
+                        repeats=5)
+
+#Metric compare model is Accuracy
+metric <- "Accuracy"
+set.seed(100)
+#Number randomely variable selected is mtry
+mtry <- c(1)
+tunegrid <- expand.grid(.mtry=mtry)
+rf_default <- train(Performance.Tag.y~.,
+                    data=Smoted_train_rf,
+                    method='rf',
+                    metric='Accuracy',
+                    tuneGrid=tunegrid,
+                    trControl=control,
+                    nodesize=20,
+                    ntree=700,
+                    importance=TRUE)
+print(rf_default)
+
+stopCluster(cl)
+
+
+# Predict response for test data
+
+rf_pred <- predict(Credit_rf, test_rf[, -16], type = "prob")
+
+#---------------------------------------------------------    
+
+# Cutoff for randomforest to assign yes or no
+
+perform_fn_rf <- function(cutoff) 
+{
+  predicted_Performance_tag <- as.factor(ifelse(rf_pred[, 1] >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test_rf$Performance.Tag.y, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
+  return(OUT_rf)
+}
+
+#---------------------------------------------------------    
+
+# creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
+s = seq(.01,.99,length=100)
+
+OUT_rf = matrix(0,100,3)
+
+# calculate the sens, spec and acc for different cutoff values
+
+for(i in 1:100)
+{
+  OUT_rf[i,] = perform_fn_rf(s[i])
+} 
+
+#---------------------------------------------------------    
+
+# plotting cutoffs
+
+plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
+lines(s,OUT_rf[,3],col=4,lwd=2)
+box()
+OUT_rf
+#legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
+
+# The plot shows that cutoff value of around 62% optimises sensitivity and accuracy
+
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.62, "no", "yes"))
+
+conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
+
+conf_forest
+
+# Sensitivity
+conf_forest$byClass[1]
+#0.624
+
+# Specificity 
+conf_forest$byClass[2]
+#0.630
+
+# Accuracy 
+conf_forest$overall[1]
+#0.624
+
+# Final RF important variables
+importance <- Credit_rf$importance 
+
+importance <- data.frame(importance)
+h2o.shutdown(prompt = FALSE)
+
+#------------Application Scorecard for balanced data random forest model------------------
+
+Application_Card_rf <- impvar_df
+
+predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf[, -16], type = "prob")
+predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.62, "no", "yes"))
+
+# Appending the probabilities and response variables to the test data
+
+Application_Card_rf$predicted_probs <- predictions_rf
+
+Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
+
+Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs
+
+Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
+
+Application_Card_rf$odds <-  log(Application_Card_rf$predict_NonDefault/Application_Card_rf$predict_Default)
+
+# Score = Offset + ( Factor * log(odds) )
+# Factor = PDO/ln(2)
+# Offset = Score-(Factor*log(odds))
+# PDO = 20, Base Score=400, odds = 10
+
+Factor = 20/log(2)
+#28.8539
+
+Offset = 400 - (28.8539*log(10))
+
+Application_Card_rf$Score = Offset + (Factor*Application_Card_rf$odds)
+
+#Calculating the cut off score for application score
+
+cutoff_odds <- log(0.62/(1-0.62))
+cutoff_score <- Offset + (Factor*cutoff_odds)
+cutoff_score
+#Cut off Score is 347.68
+
+#---------------------------------------------------------    
+# -------------------------------------Model Evaluation----------------------------------
+
+# Appending the probabilities and response variables to the test data
+
+test_rf$predicted_probs <- rf_pred[, 2]
+
+test_rf$predicted_response <- predicted_response_22
+
+#---------------------------------------------------------    
+
+# Creating new dataframe "test_predictions_rf"
+
+test_predictions_rf <- test_rf[, c("response", "predicted_probs", "predicted_response")]
+
+summary(test_predictions_rf$response)
+summary(test_predictions_rf$predicted_response)
+
+response_rate <- table(test$response)[2]/(table(test$response)[1] + table(test$response)[2])
+
+#sorting the probabilities in decreasing order 
+test_predictions_rf <- test_predictions_rf[order(test_predictions_rf$predicted_probs, decreasing = T), ]
+
+#Downloading the data 
+write.csv(test_predictions_rf,"test_prediction_rf.csv")
+
+summary(test_predictions_rf$response[1:6800])
+summary(test_predictions_rf$predicted_response[1:6800])
+
+# plotting the lift chart
+
+# Loading dplyr package 
+require(dplyr)
+library(dplyr)
+
+lift <- function(labels , predicted_prob, groups=10) {
+  
+  if(is.factor(labels)) labels  <- as.integer(as.character(labels ))
+  if(is.factor(predicted_prob)) predicted_prob <- as.integer(as.character(predicted_prob))
+  helper = data.frame(cbind(labels , predicted_prob))
+  helper[,"bucket"] = ntile(-helper[,"predicted_prob"], groups)
+  gaintable = helper %>% group_by(bucket)  %>%
+    summarise_at(vars(labels ), funs(total = n(),
+                                     totalresp=sum(., na.rm = TRUE))) %>%
+    mutate(Cumresp = cumsum(totalresp),
+           Gain=Cumresp/sum(totalresp)*100,
+           Cumlift=Gain/(bucket*(100/groups)))
+  return(gaintable)
+}
+
+# Create a Table of cumulative gain and lift 
+
+test_predictions_rf$response <- as.factor(ifelse(test_predictions_rf$response=="yes",1,0))
+
+LG = lift(test_predictions_rf$response, test_predictions_rf$predicted_probs, groups = 10)
+
+# Gain Chart 
+
+plot(LG$bucket,LG$Gain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+
+# Lift Chart 
+
+plot(LG$bucket,LG$Cumlift,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "Lift")
+
+# Total Cost incur throught direct telemarketing 
+
+# Let's say if you have spent 1Re for each customer
+View(LG)
+
+
+# The Cumulative Lift of 3.4 for top two deciles,
+# means that when selecting 20% of the records based on the model, 
+# one can expect 3.4 times the total number of targets (events) found by randomly 
+# selecting 20%-of-records without a model. In terms of customer attrition (churn) model, 
+# we can say we can cover 3.4 times the number of attritors by selecting only 20% of the
+# customers based on the model as compared to 20% customer selection randomly.
+
+### Analyzing the Charts: Cumulative gains and lift charts are a graphical 
+# representation of the advantage of using a predictive model to choose which 
+# customers to contact. The lift chart shows how much more likely we are to receive
+# respondents than if we contact a random sample of customers. For example,
+# by contacting only 10% of customers based on the predictive model we will reach 
+# 3 times as many respondents as if we use no model.
+
+
