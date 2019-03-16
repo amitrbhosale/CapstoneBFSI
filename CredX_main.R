@@ -1395,7 +1395,7 @@ test_predictions_rf$predicted_Performance_tag <- as.factor(ifelse(test_predictio
 summary(test_predictions_rf$Performance.Tag.y)
 summary(test_predictions_rf$predicted_Performance_tag)
 
-LG = lift(test_predictions_rf$Performance.Tag.y, test_predictions_rf$predicted_Performance_tag, groups = 10)
+LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Performance.Tag.y, groups = 10)
 
 # Gain Chart 
 
