@@ -1424,6 +1424,77 @@ View(LG)
 # by contacting only 10% of customers based on the predictive model we will reach 
 # 1.5 times as many respondents as if we use no model.
 
+#------------------------model evaluation for entire dataset--------------------------------
+# Predict response for test data
+
+test <- impvar_without_NA_df
+
+rf_pred <- predict(Credit_rf, test[, -16], type = "prob")
+
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.505, "no", "yes"))
+
+# Appending the probabilities and performance tag variables to the test data
+
+test$predicted_probs <- rf_pred[, 1]
+
+test$predicted_Performance_tag <- predicted_Performance_tag
+
+#---------------------------------------------------------    
+
+# Creating new dataframe "test_predictions_rf"
+
+test_predictions_rf <- test[, c("Performance.Tag.y", "predicted_probs", "predicted_Performance_tag")]
+
+#sorting the probabilities in decreasing order 
+test_predictions_rf <- test_predictions_rf[order(test_predictions_rf$predicted_probs, decreasing = T), ]
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+# plotting the lift chart
+
+# Loading dplyr package 
+require(dplyr)
+library(dplyr)
+
+lift <- function(labels , predicted_prob, groups=10) {
+  
+  if(is.factor(labels)) labels  <- as.integer(as.character(labels ))
+  if(is.factor(predicted_prob)) predicted_prob <- as.integer(as.character(predicted_prob))
+  helper = data.frame(cbind(labels , predicted_prob))
+  helper[,"bucket"] = ntile(-helper[,"predicted_prob"], groups)
+  gaintable = helper %>% group_by(bucket)  %>%
+    summarise_at(vars(labels ), funs(total = n(),
+                                     totalresp=sum(., na.rm = TRUE))) %>%
+    mutate(Cumresp = cumsum(totalresp),
+           Gain=Cumresp/sum(totalresp)*100,
+           Cumlift=Gain/(bucket*(100/groups)))
+  return(gaintable)
+}
+
+# Create a Table of cumulative gain and lift 
+
+test_predictions_rf$Performance.Tag.y <- as.factor(ifelse(test_predictions_rf$Performance.Tag.y=="yes",0,1))
+test_predictions_rf$predicted_Performance_tag <- as.factor(ifelse(test_predictions_rf$predicted_Performance_tag=="yes",0,1))
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Performance.Tag.y, groups = 10)
+
+# Gain Chart 
+
+plot(LG$bucket,LG$Gain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+
+# Lift Chart 
+
+plot(LG$bucket,LG$Cumlift,col="red",type="l",main="lift Chart",xlab="% of total targeted",ylab = "Lift")
+
+# Total Cost incur throught direct telemarketing 
+
+# Let's say if you have spent 1Re for each customer
+View(LG)
+
 #------------Application Scorecard for balanced data random forest model------------------
 
 Application_Card_rf <- impvar_df
