@@ -1382,8 +1382,8 @@ lift <- function(labels , predicted_prob, groups=10) {
     summarise_at(vars(labels ), funs(total = n(),
                                      totalresp=sum(., na.rm = TRUE))) %>%
     mutate(Cumresp = cumsum(totalresp),
-           Gain=Cumresp/sum(totalresp)*100,
-           Cumlift=Gain/(bucket*(100/groups)))
+           CumGain=Cumresp/sum(totalresp)*100,
+           Cumlift=CumGain/(bucket*(100/groups)))
   return(gaintable)
 }
 
@@ -1399,7 +1399,7 @@ LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Per
 
 # Gain Chart 
 
-plot(LG$bucket,LG$Gain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+plot(LG$bucket,LG$CumGain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
 
 # Lift Chart 
 
@@ -1467,8 +1467,8 @@ lift <- function(labels , predicted_prob, groups=10) {
     summarise_at(vars(labels ), funs(total = n(),
                                      totalresp=sum(., na.rm = TRUE))) %>%
     mutate(Cumresp = cumsum(totalresp),
-           Gain=Cumresp/sum(totalresp)*100,
-           Cumlift=Gain/(bucket*(100/groups)))
+           CumGain=Cumresp/sum(totalresp)*100,
+           Cumlift=CumGain/(bucket*(100/groups)))
   return(gaintable)
 }
 
@@ -1484,7 +1484,7 @@ LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Per
 
 # Gain Chart 
 
-plot(LG$bucket,LG$Gain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+plot(LG$bucket,LG$CumGain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
 
 # Lift Chart 
 
