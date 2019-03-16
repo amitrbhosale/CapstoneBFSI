@@ -1403,19 +1403,18 @@ plot(LG$bucket,LG$Gain,col="red",type="l",main="Gain Chart",xlab="% of total tar
 
 # Lift Chart 
 
-plot(LG$bucket,LG$Cumlift,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "Lift")
+plot(LG$bucket,LG$Cumlift,col="red",type="l",main="lift Chart",xlab="% of total targeted",ylab = "Lift")
 
 # Total Cost incur throught direct telemarketing 
 
 # Let's say if you have spent 1Re for each customer
 View(LG)
 
-
-# The Cumulative Lift of 3.4 for top two deciles,
-# means that when selecting 20% of the records based on the model, 
-# one can expect 3.4 times the total number of targets (events) found by randomly 
-# selecting 20%-of-records without a model. In terms of customer attrition (churn) model, 
-# we can say we can cover 3.4 times the number of attritors by selecting only 20% of the
+# The Cumulative Lift of 1.5 for top two deciles,
+# means that when selecting 60% of the records based on the model, 
+# one can expect 1.5 times the total number of targets (events) found by randomly 
+# selecting 50%-of-records without a model. In terms of defaulter model, 
+# we can say we can cover 1.5 times the number of defaulters by selecting only 60% of the
 # customers based on the model as compared to 20% customer selection randomly.
 
 ### Analyzing the Charts: Cumulative gains and lift charts are a graphical 
@@ -1423,7 +1422,7 @@ View(LG)
 # customers to contact. The lift chart shows how much more likely we are to receive
 # respondents than if we contact a random sample of customers. For example,
 # by contacting only 10% of customers based on the predictive model we will reach 
-# 3 times as many respondents as if we use no model.
+# 1.5 times as many respondents as if we use no model.
 
 #------------Application Scorecard for balanced data random forest model------------------
 
