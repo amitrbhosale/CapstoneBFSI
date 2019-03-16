@@ -1582,7 +1582,7 @@ Credit_loss_with_model <- (1119/45715)*100
 
 #Credit loss saved
 Credit_loss_without_model - Credit_loss_with_model
-
+#Credit loss is reduced by 1.78% using the model
 #---------------------------------------------------------    
 
 
