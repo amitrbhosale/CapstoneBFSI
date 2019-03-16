@@ -1424,7 +1424,7 @@ View(LG)
 # by contacting only 10% of customers based on the predictive model we will reach 
 # 1.5 times as many respondents as if we use no model.
 
-#------------------------model evaluation for entire dataset--------------------------------
+#------------------------model evaluation for entire dataset with performance tag values--------------------------------
 # Predict response for test data
 
 test <- impvar_without_NA_df
@@ -1508,7 +1508,7 @@ Application_Card_rf$predicted_probs <- predictions_rf
 
 Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
 
-Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs
+Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs[,1]
 
 Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
 
@@ -1524,7 +1524,7 @@ Factor = 20/log(2)
 
 Offset = 400 - (Factor*log(10))
 
-Application_Card_rf$Score = Offset + (Factor*Application_Card_rf$odds)
+Application_Card_rf$Score <- Offset + (Factor*Application_Card_rf$odds)
 
 #Calculating the cut off score for application score
 
@@ -1532,6 +1532,56 @@ cutoff_odds <- log(0.505/(1-0.505))
 cutoff_score <- Offset + (Factor*cutoff_odds)
 cutoff_score
 #Cut off Score is 334.138
+
+quantile(Application_Card_rf$Score, seq(0,1,0.01))
+
+#Application_Card_rf$Score[which(Application_Card_rf$Score==(1/0))] <- max(Application_Card_rf$Score[which(Application_Card_rf$Score != (1/0))])
+
+Application_Card_rf$Performance.Tag.y <- ifelse(Application_Card_rf$Performance.Tag.y==0,"yes",ifelse(is.na(Application_Card_rf$Performance.Tag.y),"NA","no"))
+
+#Histogram for Application Scores
+ggplot(Application_Card_rf) +  geom_histogram(mapping = aes(x = Application_Card_rf$Score), binwidth = 2)
+
+#Boxplot for predicted performance Tag
+boxplot(Application_Card_rf$Score ~ Application_Card_rf$predicted_Performance_tag,
+        Application_Card_rf,xlab="Non-Default or Default",ylab="Score",main="Plot for predicted performance")
+
+#Boxplot for performance Tag
+boxplot(Application_Card_rf$Score ~ Application_Card_rf$Performance.Tag.y ,
+        Application_Card_rf,xlab="Non-Default or Default",ylab="Score",main="Plot for performance tag")
+
+Scorescard_without_na <- subset(Application_Card_rf,is.na(Application_Card_rf$Performance.Tag.y)==FALSE)
+Scorescard_without_na$Performance.Tag.y <- as.factor(Scorescard_without_na$Performance.Tag.y)
+Scorescard_without_na$predicted_Performance_tag <- as.factor(Scorescard_without_na$predicted_Performance_tag)
+
+confusionMatrix(Scorescard_without_na$predicted_Performance_tag,Scorescard_without_na$Performance.Tag.y)
+
+#Revenue loss occurs when actual bad customers are predicted as good customers by model
+#Totally 22324 customers are identified as good by the model even though they are bad customers
+#if revenue from each member is Rs 1, then
+Total_revenue_expected <- 69867
+Revenue_gained_without_model <- 66920
+Revenue_gain_precentage_without_model <- (Revenue_gained_without_model/Total_revenue_expected)*100
+Revenue_gained_by_model <- 45715
+Revenue_gain_precentage_with_model <- (Revenue_gained_by_model/Total_revenue_expected)*100
+Revenue_gain_difference <- Revenue_gain_precentage_with_model-Revenue_gain_precentage_without_model
+#Revenue gained is 30.3% percent less by using the model. Hence there is a revenue loss of 30.3 % more using the model
+
+#Calculating credit loss
+#credit loss is defined as loss incurred by amount not repayed by cutomer or amount not sanctioned for customers who will probably repay the amount
+#lets assume amount approved for each customer is Re 1
+
+Total_approved_without_model <- 69687
+loss_without_model <- 2947
+Credit_loss_without_model <- (2947/69687)*100
+
+Total_approved_with_model <- 45715
+#but there are 1119 customers who are actually good customers but classified as bad
+loss_with_model <- 1119
+Credit_loss_with_model <- (1119/45715)*100
+
+#Credit loss saved
+Credit_loss_without_model - Credit_loss_with_model
 
 #---------------------------------------------------------    
 
