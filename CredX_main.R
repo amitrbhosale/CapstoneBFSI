@@ -2017,6 +2017,37 @@ Scorescard_without_na$predicted_Performance_tag <- as.factor(Scorescard_without_
 
 matrix <- confusionMatrix(Scorescard_without_na$predicted_Performance_tag,Scorescard_without_na$Performance.Tag.y)
 
+################################################################################################
+
+#-------------------------------Financial Analysis----------------------------------------------
+
 #Credit Loss
 
-#---------------------------------------------------------    
+matrix_table <- matrix$table
+
+#Credit loss without model is the no of bad customers
+credit_loss_without_model <- matrix_table[1,2]+matrix_table[2,2]
+credit_loss_without_model_percentage <- (credit_loss_without_model/sum(matrix_table))*100
+
+#credit loss using model is the no of customers predicted as good but are actually bad
+credit_loss_with_model <- matrix_table[1,2]
+credit_loss_with_model_percentage <- (credit_loss_with_model/sum(matrix_table))*100
+
+#Credit loss saved is the differencce between cresit loss without model and credit loss wit model
+credit_loss_difference <- credit_loss_without_model_percentage-credit_loss_with_model_percentage
+credit_loss_difference
+
+#Credit loss is reduced by 2.63% by using the model
+
+#-------------------------------------------------------------------------------
+
+#Revenue loss
+
+#As per above calculation 4.2% of the customers contribute to 100% revenue loss.
+#Revenue loss with model is calculated as below
+
+Revenue_loss_with_model <- (credit_loss_with_model_percentage*100)/credit_loss_without_model_percentage
+Revenue_loss_with_model
+
+#Hence revenue loss is reduced from 100% to 37.6% using the model
+#-----------------------------------------------------------------------------------    
