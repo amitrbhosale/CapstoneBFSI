@@ -28,6 +28,7 @@ install.packages("rattle")
 install.packages("rpart.plot")
 install.packages("randomForest")
 install.packages("DMwR")
+install.packages("ggcorrplot")
 
 # Import Nessesary Libraries 
 library(DMwR)
@@ -53,6 +54,7 @@ library(purrr)
 h2o.init(nthreads = 4)
 library(rpart)
 library(rattle)
+library(ggcorrplot)
 
 # Set Working Directory to Directory of the File
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -122,9 +124,6 @@ woe_replace <- function(dataframe, IV)
   }
   return(df)
 }
-
-
-
 
 # Read the Demographic Datasets
 Demographic_data <- read.csv("Demographic data.csv")
@@ -271,9 +270,6 @@ univariate_continuous(Demographic_data,Demographic_data$No.of.months.in.current.
 # High Distribution of Current Company Ranging from 0 to 75
 univariate_categorical(Demographic_data,Demographic_data$Performance.Tag,"Performance Distribution")
 # 94% are 0 4% are 1 and 2% are NA
-
-
-
 
 # Read the Credit Bureau Datasets
 Credit_Bureau_data <- read.csv("Credit Bureau data.csv")
@@ -748,11 +744,6 @@ ggplot(All_IVs, aes(x=All_IVs$Variable,y=All_IVs$IV))+geom_bar(stat = "identity"
 # Copying IV$Summary to Predictor Variable 
 predictor_variables <- data.frame(IV$Summary)
 
-######################################################################################
-#                     Correlation Analysis                                           #
-######################################################################################
-# Correlation Analysis to be Done for for all Numer ic Variable inorder to eleminate Income and other correlation element
-
 #Subsetting Predictor Variable which are above Threshold Line (i.e. > 0.1)
 predictor_variables <- subset(predictor_variables,predictor_variables$IV >0.1)
 
@@ -886,12 +877,24 @@ traindata <- merged_df
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
 
-
 # Once the NAs are treated, we are replacing the actual values in the dataset with the corresponding WOE values using the function.
 
 # Replacement using woe_replace function
 impvar_df <- woe_replace(impvar_df,IV)
 
+######################################################################################
+#                     Correlation Analysis                                           #
+######################################################################################
+# Correlation Analysis to be Done for for all Numer ic Variable inorder to eleminate Income and other correlation element
+
+cor_data <- subset(impvar_df,is.na(Performance.Tag.y)==FALSE)
+cor_data <- cor_data[,-16]
+correlation_matrix<- cor(cor_data)
+
+ggcorrplot(correlation_matrix)
+
+#######################################################################
+  
 # Modelling Logistic regression
       
 ########################################################################
@@ -906,6 +909,9 @@ train = impvar_df[indices,]
 
 test = impvar_df[!(indices),]
 
+nrow(train)/nrow(impvar_without_NA_df)
+
+nrow(test)/nrow(impvar_without_NA_df)
 
 #Initial model
 model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
@@ -917,7 +923,6 @@ model_2<- stepAIC(model_1, direction="both")
 
 summary(model_2)
 vif(model_2)
-
 
 final_model <- model_2
 
@@ -992,9 +997,9 @@ legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sens
 #---------------------------------------------------------    
 cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
 
-# Let's choose a cutoff value of 95.3% for final model
+# Let's choose a cutoff value of 58% for final model
 
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= .953, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .58, "no", "yes"))
 
 conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
 
@@ -1017,7 +1022,7 @@ spec
 Application_Card_Merged <- impvar_df
 
 predictions_logit <- predict(final_model, newdata = Application_Card_Merged[, -16], type = "response")
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.953, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.58, "no", "yes"))
 
 # Appending the probabilities and response variables to the test data
 
@@ -1045,10 +1050,10 @@ Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
 
 #Calculating the cut off score for application score
 
-cutoff_odds <- log(0.953/(1-0.953))
+cutoff_odds <- log(0.58/(1-0.58))
 cutoff_score <- Offset + (Factor*cutoff_odds)
 cutoff_score
-#Cut off Score is 420.39
+#Cut off Score is 342.87
 
 #-------------------------------Demographic data WOE, IV and model building-------
 #Need to perform WOE and IV Analysis
@@ -1129,6 +1134,10 @@ indices = sample.split(impvar_dem_without_NA_df$Performance.Tag, SplitRatio = 0.
 train = impvar_dem_without_NA_df[indices,]
 
 test = impvar_dem_without_NA_df[!(indices),]
+
+nrow(train)/nrow(impvar_dem_without_NA_df)
+
+nrow(test)/nrow(impvar_dem_without_NA_df)  
 
 #Initial model
 model_1 = glm(Performance.Tag ~ ., data = train, family = "binomial")
@@ -1211,9 +1220,9 @@ legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sens
 #---------------------------------------------------------    
 cutoff_dem <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
 
-# Let's choose a cutoff value of 95.66% for final model
+# Let's choose a cutoff value of 48% for final model
 
-predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= .9566, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.48, "no", "yes"))
 
 conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag, positive = "no")
 
@@ -1236,7 +1245,7 @@ spec
 Application_Card_dem_Merged <- impvar_dem_df
 
 predictions_logit_dem <- predict(final_model_dem, newdata = Application_Card_dem_Merged[, -4], type = "response")
-predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.9566, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.48, "no", "yes"))
 
 # Appending the probabilities and response variables to the test data
 
@@ -1260,14 +1269,14 @@ Factor = 20/log(2)
 
 Offset = 400 - (28.8539*log(10))
 
-  Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)  
+Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged$Odds)  
 
 #Calculating the cut off score for application score
 
-cutoff_odds_dem <- log(0.9566/(1-0.9566))
+cutoff_odds_dem <- log(0.48/(1-0.48))
 cutoff_score_dem <- Offset + (Factor*cutoff_odds_dem)
 cutoff_score_dem
-#Cut off Score is 422.8044
+#Cut off Score is 331.25
 
 #---------------End of application Score card code for Demographic data----------------
 
@@ -1346,16 +1355,16 @@ Smoted_train_dt <- SMOTE(Performance.Tag.y~.,data = train_dt,perc.over = 120,per
 
 summary(Smoted_train_dt$Performance.Tag.y)
 
-tree_5 <- rpart(Performance.Tag.y~.,data = Smoted_train_dt,control = rpart.control(minsplit = 15,cp=0.0001),method = "class")
+tree_5 <- rpart(Performance.Tag.y~.,data = Smoted_train_dt,control = rpart.control(minsplit = 20,cp=0.01),method = "class")
 
 tree_5_pred <- predict(tree_5,test_dt[,-16],type = "class")
 tree_5_pred <- factor(ifelse(tree_5_pred==1,"no","yes"))
 Smoted_train_dt$Performance.Tag.y <- factor(ifelse(Smoted_train_dt$Performance.Tag.y==1,"no","yes"))
 confusionMatrix(tree_5_pred,test_dt[,16],positive = "no")
 
-#Accuracy = 0.70
-#Sensitivity = 0.71
-#Specificity = 0.43
+#Accuracy = 0.61
+#Sensitivity = 0.60
+#Specificity = 0.65
 #Even theough accuracy decreases, the model provides a better specificity compared to model built on unbalanced data
 #---------------------------------------------------------    
 
@@ -1380,7 +1389,8 @@ nrow(test_rf)/nrow(impvar_without_NA_df)
 
 # Building the model 
 
-Credit_rf <- randomForest(Performance.Tag.y ~., data = train_rf, proximity = F, do.trace = T, mtry = 5)
+Credit_rf <- randomForest(Performance.Tag.y ~., data = train_rf, 
+                          proximity = F, do.trace = T, mtry=5,importance=TRUE)
 
 # Predict response for test data
 
@@ -1431,7 +1441,7 @@ box()
 
 cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
 OUT_rf
-# The plot shows that cutoff value of around 98.3% optimises sensitivity and accuracy
+# The plot shows that cutoff value of around 74% optimises sensitivity and accuracy
 
 predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.97, "no", "yes"))
 
@@ -1455,152 +1465,6 @@ conf_forest$overall[1]
 importance <- Credit_rf$importance 
 
 importance <- data.frame(importance)
-
-
-#-----------------Random forest model for Balanced data-------------------
-
-set.seed(100)
-
-impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
-
-impvar_without_NA_df$Performance.Tag.y <- as.factor(ifelse(impvar_without_NA_df$Performance.Tag.y ==1,"no","yes"))
-split_indices <- sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.70)
-
-train_rf <- impvar_without_NA_df[split_indices, ]
-
-test_rf <- impvar_without_NA_df[!split_indices, ]
-
-nrow(train_rf)/nrow(impvar_without_NA_df)
-
-nrow(test_rf)/nrow(impvar_without_NA_df)
-
-#balncing the data using SMOTE function
-
-summary(factor(train_rf$Performance.Tag.y))
-train_rf$Performance.Tag.y <- as.factor(train_rf$Performance.Tag.y)
-
-Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,perc.under = 200,k=20)
-
-summary(Smoted_train_rf$Performance.Tag.y)
-
-tuneRF(Smoted_train_rf[,-16],Smoted_train_rf[,16])
-
-# Building the model 
-
-Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, do.trace = T, mtry = 6,nodesize=42)
-
-# Predict response for test data
-
-rf_pred <- predict(Credit_rf, test_rf[, -16], type = "prob")
-
-#---------------------------------------------------------    
-
-# Cutoff for randomforest to assign yes or no
-
-perform_fn_rf <- function(cutoff) 
-{
-  predicted_Performance_tag <- as.factor(ifelse(rf_pred[, 1] >= cutoff, "no", "yes"))
-  conf <- confusionMatrix(predicted_Performance_tag, test_rf$Performance.Tag.y, positive = "no")
-  acc <- conf$overall[1]
-  sens <- conf$byClass[1]
-  spec <- conf$byClass[2]
-  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
-  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
-  return(OUT_rf)
-}
-
-#---------------------------------------------------------    
-
-# creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
-s = seq(.01,.99,length=100)
-
-OUT_rf = matrix(0,100,3)
-
-# calculate the sens, spec and acc for different cutoff values
-
-for(i in 1:100)
-{
-  OUT_rf[i,] = perform_fn_rf(s[i])
-} 
-
-#---------------------------------------------------------    
-
-# plotting cutoffs
-
-plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
-axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
-lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
-lines(s,OUT_rf[,3],col=4,lwd=2)
-box()
-
-#legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
-
-cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
-
-# The plot shows that cutoff value of around 62% optimises sensitivity and accuracy
-
-predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.62, "no", "yes"))
-
-conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
-
-conf_forest
-
-# Sensitivity
-conf_forest$byClass[1]
-#0.624
-
-# Specificity 
-conf_forest$byClass[2]
-#0.630
-
-# Accuracy 
-conf_forest$overall[1]
-#0.624
-
-# Final RF important variables
-importance <- Credit_rf$importance 
-
-importance <- data.frame(importance)
-
-
-#------------Application Scorecard for balanced data random forest model------------------
-
-Application_Card_rf <- impvar_df
-
-predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf[, -16], type = "prob")
-predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.62, "no", "yes"))
-
-# Appending the probabilities and response variables to the test data
-
-Application_Card_rf$predicted_probs <- predictions_rf
-
-Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
-
-Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs
-
-Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
-
-Application_Card_rf$odds <-  log(Application_Card_rf$predict_NonDefault/Application_Card_rf$predict_Default)
-
-# Score = Offset + ( Factor * log(odds) )
-# Factor = PDO/ln(2)
-# Offset = Score-(Factor*log(odds))
-# PDO = 20, Base Score=400, odds = 10
-
-Factor = 20/log(2)
-#28.8539
-
-Offset = 400 - (28.8539*log(10))
-
-Application_Card_rf$Score = Offset + (Factor*Application_Card_rf$odds)
-
-#Calculating the cut off score for application score
-
-cutoff_odds <- log(0.62/(1-0.62))
-cutoff_score <- Offset + (Factor*cutoff_odds)
-cutoff_score
-#Cut off Score is 347.68
 
 #-----------------------------------------------------------------------------------------------------------
 # Modelling Logistic regression for balanced data
@@ -1720,8 +1584,6 @@ summary(predictions_logit)
 # # Let's use the probability cutoff of 90.5%.
 # #### Error here. need to investigate
 # predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.905, "no", "yes"))
-# test$Performance.Tag.y <- factor(ifelse(test$Performance.Tag.y ==1, "no","yes"))
-# summary(test$Performance.Tag.y)
 # summary(predicted_Performance_tag)
 # # Creating confusion matrix for identifying the model evaluation.
 # 
@@ -1731,65 +1593,413 @@ summary(predictions_logit)
 # 
 # #-----------------------------------------------------------
 # 
-# # Let's find out the optimal probalility cutoff 
-# 
-# perform_fn <- function(cutoff) 
-# {
-#   predicted_Performance_tag <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
-#   conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
-#   acc <- conf$overall[1]
-#   sens <- conf$byClass[1]
-#   spec <- conf$byClass[2]
-#   out <- t(as.matrix(c(sens, spec, acc))) 
-#   colnames(out) <- c("sensitivity", "specificity", "accuracy")
-#   return(out)
-# }
-# 
-# #---------------------------------------------------------  
-# # Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
-# 
-# s = seq(0.001,0.99,length=100)
-# 
-# OUT = matrix(0,100,3)
-# 
-# for(i in 1:100)
-# {
-#   OUT[i,] = perform_fn(s[i])
-# } 
-# 
-# #---------------------------------------------------------    
-# 
-# # plotting cutoffs 
-# plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-# axis(1,seq(0.001,1,length=5),seq(0.001,1,length=5),cex.lab=1.5)
-# axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
-# lines(s,OUT[,2],col="darkgreen",lwd=2)
-# lines(s,OUT[,3],col=4,lwd=2)
-# box()
-# legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
-# 
-# #---------------------------------------------------------    
-# cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
-# 
-# # Let's choose a cutoff value of 46% for final model
-# 
-# predicted_Performance_tag <- factor(ifelse(predictions_logit >= .46, "no", "yes"))
-# 
-# conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
-# 
-# acc <- conf_final$overall[1]
-# 
-# sens <- conf_final$byClass[1]
-# 
-# spec <- conf_final$byClass[2]
-# 
-# acc
-# 
-# sens
-# 
-# spec
+# Let's find out the optimal probalility cutoff
+test$Performance.Tag.y <- factor(ifelse(test$Performance.Tag.y ==1, "no","yes"))
+summary(test$Performance.Tag.y)
+perform_fn <- function(cutoff)
+{
+  predicted_Performance_tag <- factor(ifelse(predictions_logit >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  out <- t(as.matrix(c(sens, spec, acc)))
+  colnames(out) <- c("sensitivity", "specificity", "accuracy")
+  return(out)
+}
 
+#---------------------------------------------------------
+# Creating cutoff values from 0.01 to 0.99 for plotting and initiallizing a matrix of 1000 X 4.
+
+s = seq(0.001,0.99,length=100)
+
+OUT = matrix(0,100,3)
+
+for(i in 1:100)
+{
+  OUT[i,] = perform_fn(s[i])
+}
+
+#---------------------------------------------------------
+
+# plotting cutoffs
+plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0.001,1,length=5),seq(0.001,1,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT[,2],col="darkgreen",lwd=2)
+lines(s,OUT[,3],col=4,lwd=2)
+box()
+legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+#---------------------------------------------------------
+cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
+OUT
+
+# Let's choose a cutoff value of 46% for final model
+
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .46, "no", "yes"))
+
+conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
+
+acc <- conf_final$overall[1]
+
+sens <- conf_final$byClass[1]
+
+spec <- conf_final$byClass[2]
+
+acc
+
+sens
+
+spec
+
+conf_final
 #----------------------------End_of_model_buiding----------------------------------------
 
+#----------------------------Random forest model for Balanced data-----------------------
 
+set.seed(100)
+
+impvar_without_NA_df <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==FALSE)
+
+impvar_without_NA_df$Performance.Tag.y <- as.factor(ifelse(impvar_without_NA_df$Performance.Tag.y ==1,"no","yes"))
+split_indices <- sample.split(impvar_without_NA_df$Performance.Tag.y, SplitRatio = 0.70)
+
+train_rf <- impvar_without_NA_df[split_indices, ]
+
+test_rf <- impvar_without_NA_df[!split_indices, ]
+
+nrow(train_rf)/nrow(impvar_without_NA_df)
+
+nrow(test_rf)/nrow(impvar_without_NA_df)
+
+#balncing the data using SMOTE function
+
+summary(factor(train_rf$Performance.Tag.y))
+train_rf$Performance.Tag.y <- as.factor(train_rf$Performance.Tag.y)
+
+Smoted_train_rf <- SMOTE(Performance.Tag.y~.,data = train_rf,perc.over = 100,perc.under = 200,k=20)
+
+summary(Smoted_train_rf$Performance.Tag.y)
+
+tuneRF(Smoted_train_rf[,-16],Smoted_train_rf[,16])
+
+# Building the model 
+
+Credit_rf <- randomForest(Performance.Tag.y ~., data = Smoted_train_rf, proximity = F, 
+                          do.trace = T, mtry = 1,nodesize=20,ntree=500,importance=TRUE)
+
+# Predict response for test data
+
+rf_pred <- predict(Credit_rf, test_rf[, -16], type = "prob")
+
+#---------------------------------------------------------    
+
+# Cutoff for randomforest to assign yes or no
+
+perform_fn_rf <- function(cutoff) 
+{
+  predicted_Performance_tag <- as.factor(ifelse(rf_pred[, 1] >= cutoff, "no", "yes"))
+  conf <- confusionMatrix(predicted_Performance_tag, test_rf$Performance.Tag.y, positive = "no")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
+  return(OUT_rf)
+}
+
+#---------------------------------------------------------    
+
+# creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
+s = seq(.01,.99,length=100)
+
+OUT_rf = matrix(0,100,3)
+
+# calculate the sens, spec and acc for different cutoff values
+
+for(i in 1:100)
+{
+  OUT_rf[i,] = perform_fn_rf(s[i])
+} 
+
+#---------------------------------------------------------    
+
+# plotting cutoffs
+
+plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
+lines(s,OUT_rf[,3],col=4,lwd=2)
+box()
+OUT_rf
+#legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
+
+# The plot shows that cutoff value of around 50.5% optimises sensitivity and accuracy
+
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.505, "no", "yes"))
+
+conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
+
+conf_forest
+# Sensitivity
+conf_forest$byClass[1]
+#approx 67%
+
+# Specificity 
+conf_forest$byClass[2]
+#approx 62%
+
+# Accuracy 
+conf_forest$overall[1]
+#approx 67%
+
+conf_forest
+
+# Final RF important variables
+importance <- Credit_rf$importance 
+
+importance <- data.frame(importance)
 h2o.shutdown(prompt = FALSE)
+
+# -------------------------------------Model Evaluation----------------------------------
+
+# Appending the probabilities and performance tag variables to the test data
+
+test_rf$predicted_probs <- rf_pred[, 1]
+
+test_rf$predicted_Performance_tag <- predicted_Performance_tag
+
+#---------------------------------------------------------    
+
+# Creating new dataframe "test_predictions_rf"
+
+test_predictions_rf <- test_rf[, c("Performance.Tag.y", "predicted_probs", "predicted_Performance_tag")]
+
+#sorting the probabilities in decreasing order 
+test_predictions_rf <- test_predictions_rf[order(test_predictions_rf$predicted_probs, decreasing = T), ]
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+# plotting the lift chart
+
+# Loading dplyr package 
+require(dplyr)
+library(dplyr)
+
+lift <- function(labels , predicted_prob, groups=10) {
+  
+  if(is.factor(labels)) labels  <- as.integer(as.character(labels ))
+  if(is.factor(predicted_prob)) predicted_prob <- as.integer(as.character(predicted_prob))
+  helper = data.frame(cbind(labels , predicted_prob))
+  helper[,"bucket"] = ntile(-helper[,"predicted_prob"], groups)
+  gaintable = helper %>% group_by(bucket)  %>%
+    summarise_at(vars(labels ), funs(total = n(),
+                                     totalresp=sum(., na.rm = TRUE))) %>%
+    mutate(Cumresp = cumsum(totalresp),
+           CumGain=Cumresp/sum(totalresp)*100,
+           Cumlift=CumGain/(bucket*(100/groups)))
+  return(gaintable)
+}
+
+# Create a Table of cumulative gain and lift 
+
+test_predictions_rf$Performance.Tag.y <- as.factor(ifelse(test_predictions_rf$Performance.Tag.y=="yes",0,1))
+test_predictions_rf$predicted_Performance_tag <- as.factor(ifelse(test_predictions_rf$predicted_Performance_tag=="yes",0,1))
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Performance.Tag.y, groups = 10)
+
+# Gain Chart 
+
+plot(LG$bucket,LG$CumGain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+
+# Lift Chart 
+
+plot(LG$bucket,LG$Cumlift,col="red",type="l",main="lift Chart",xlab="% of total targeted",ylab = "Lift")
+
+# Total Cost incur throught direct telemarketing 
+
+# Let's say if you have spent 1Re for each customer
+View(LG)
+
+# The Cumulative Lift of 1.5 for top two deciles,
+# means that when selecting 60% of the records based on the model, 
+# one can expect 1.5 times the total number of targets (events) found by randomly 
+# selecting 50%-of-records without a model. In terms of defaulter model, 
+# we can say we can cover 1.5 times the number of defaulters by selecting only 60% of the
+# customers based on the model as compared to 20% customer selection randomly.
+
+### Analyzing the Charts: Cumulative gains and lift charts are a graphical 
+# representation of the advantage of using a predictive model to choose which 
+# customers to contact. The lift chart shows how much more likely we are to receive
+# respondents than if we contact a random sample of customers. For example,
+# by contacting only 10% of customers based on the predictive model we will reach 
+# 1.5 times as many respondents as if we use no model.
+
+#------------------------model evaluation for entire dataset with performance tag values--------------------------------
+# Predict response for test data
+
+test <- impvar_without_NA_df
+
+rf_pred <- predict(Credit_rf, test[, -16], type = "prob")
+
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.505, "no", "yes"))
+
+# Appending the probabilities and performance tag variables to the test data
+
+test$predicted_probs <- rf_pred[, 1]
+
+test$predicted_Performance_tag <- predicted_Performance_tag
+
+#---------------------------------------------------------    
+
+# Creating new dataframe "test_predictions_rf"
+
+test_predictions_rf <- test[, c("Performance.Tag.y", "predicted_probs", "predicted_Performance_tag")]
+
+#sorting the probabilities in decreasing order 
+test_predictions_rf <- test_predictions_rf[order(test_predictions_rf$predicted_probs, decreasing = T), ]
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+# plotting the lift chart
+
+# Loading dplyr package 
+require(dplyr)
+library(dplyr)
+
+lift <- function(labels , predicted_prob, groups=10) {
+  
+  if(is.factor(labels)) labels  <- as.integer(as.character(labels ))
+  if(is.factor(predicted_prob)) predicted_prob <- as.integer(as.character(predicted_prob))
+  helper = data.frame(cbind(labels , predicted_prob))
+  helper[,"bucket"] = ntile(-helper[,"predicted_prob"], groups)
+  gaintable = helper %>% group_by(bucket)  %>%
+    summarise_at(vars(labels ), funs(total = n(),
+                                     totalresp=sum(., na.rm = TRUE))) %>%
+    mutate(Cumresp = cumsum(totalresp),
+           CumGain=Cumresp/sum(totalresp)*100,
+           Cumlift=CumGain/(bucket*(100/groups)))
+  return(gaintable)
+}
+
+# Create a Table of cumulative gain and lift 
+
+test_predictions_rf$Performance.Tag.y <- as.factor(ifelse(test_predictions_rf$Performance.Tag.y=="yes",0,1))
+test_predictions_rf$predicted_Performance_tag <- as.factor(ifelse(test_predictions_rf$predicted_Performance_tag=="yes",0,1))
+
+summary(test_predictions_rf$Performance.Tag.y)
+summary(test_predictions_rf$predicted_Performance_tag)
+
+LG = lift(test_predictions_rf$predicted_Performance_tag, test_predictions_rf$Performance.Tag.y, groups = 10)
+
+# Gain Chart 
+
+plot(LG$bucket,LG$CumGain,col="red",type="l",main="Gain Chart",xlab="% of total targeted",ylab = "% of positive Response")
+
+# Lift Chart 
+
+plot(LG$bucket,LG$Cumlift,col="red",type="l",main="lift Chart",xlab="% of total targeted",ylab = "Lift")
+
+# Total Cost incur throught direct telemarketing 
+
+# Let's say if you have spent 1Re for each customer
+View(LG)
+
+#------------Application Scorecard for balanced data random forest model------------------
+
+Application_Card_rf <- impvar_df
+
+predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf[, -16], type = "prob")
+predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.505, "no", "yes"))
+
+# Appending the probabilities and response variables to the test data
+
+Application_Card_rf$predicted_probs <- predictions_rf
+
+Application_Card_rf$predicted_Performance_tag <- predicted_Performance_tag
+
+Application_Card_rf$predict_NonDefault <- Application_Card_rf$predicted_probs[,1]
+
+Application_Card_rf$predict_Default <- 1 - Application_Card_rf$predict_NonDefault
+
+Application_Card_rf$odds <-  log(Application_Card_rf$predict_NonDefault/Application_Card_rf$predict_Default)
+
+# Score = Offset + ( Factor * log(odds) )
+# Factor = PDO/ln(2)
+# Offset = Score-(Factor*log(odds))
+# PDO = 20, Base Score=400, odds = 10
+
+Factor = 20/log(2)
+#28.8539
+
+Offset = 400 - (Factor*log(10))
+
+Application_Card_rf$Score <- Offset + (Factor*Application_Card_rf$odds)
+
+#Calculating the cut off score for application score
+
+cutoff_odds <- log(0.505/(1-0.505))
+cutoff_score <- Offset + (Factor*cutoff_odds)
+cutoff_score
+#Cut off Score is 334.138
+
+quantile(Application_Card_rf$Score, seq(0,1,0.01))
+
+#Application_Card_rf$Score[which(Application_Card_rf$Score==(1/0))] <- max(Application_Card_rf$Score[which(Application_Card_rf$Score != (1/0))])
+
+Application_Card_rf$Performance.Tag.y <- ifelse(Application_Card_rf$Performance.Tag.y==0,"yes",ifelse(is.na(Application_Card_rf$Performance.Tag.y),"NA","no"))
+
+#Histogram for Application Scores
+ggplot(Application_Card_rf) +  geom_histogram(mapping = aes(x = Application_Card_rf$Score), binwidth = 2)
+
+#Boxplot for predicted performance Tag
+boxplot(Application_Card_rf$Score ~ Application_Card_rf$predicted_Performance_tag,
+        Application_Card_rf,xlab="Non-Default or Default",ylab="Score",main="Plot for predicted performance")
+
+#Boxplot for performance Tag
+boxplot(Application_Card_rf$Score ~ Application_Card_rf$Performance.Tag.y ,
+        Application_Card_rf,xlab="Non-Default or Default",ylab="Score",main="Plot for performance tag")
+
+Scorescard_without_na <- subset(Application_Card_rf,is.na(Application_Card_rf$Performance.Tag.y)==FALSE)
+Scorescard_without_na$Performance.Tag.y <- as.factor(Scorescard_without_na$Performance.Tag.y)
+Scorescard_without_na$predicted_Performance_tag <- as.factor(Scorescard_without_na$predicted_Performance_tag)
+
+confusionMatrix(Scorescard_without_na$predicted_Performance_tag,Scorescard_without_na$Performance.Tag.y)
+
+#Revenue loss occurs when actual bad customers are predicted as good customers by model
+#Totally 22324 customers are identified as good by the model even though they are bad customers
+#if revenue from each member is Rs 1, then
+Total_revenue_expected <- 69867
+Revenue_gained_without_model <- 66920
+Revenue_gain_precentage_without_model <- (Revenue_gained_without_model/Total_revenue_expected)*100
+Revenue_gained_by_model <- 45715
+Revenue_gain_precentage_with_model <- (Revenue_gained_by_model/Total_revenue_expected)*100
+Revenue_gain_difference <- Revenue_gain_precentage_with_model-Revenue_gain_precentage_without_model
+#Revenue gained is 30.3% percent less by using the model. Hence there is a revenue loss of 30.3 % more using the model
+
+#Calculating credit loss
+#credit loss is defined as loss incurred by amount not repayed by cutomer or amount not sanctioned for customers who will probably repay the amount
+#lets assume amount approved for each customer is Re 1
+
+Total_approved_without_model <- 69687
+loss_without_model <- 2947
+Credit_loss_without_model <- (2947/69687)*100
+
+Total_approved_with_model <- 45715
+#but there are 1119 customers who are actually good customers but classified as bad
+loss_with_model <- 1119
+Credit_loss_with_model <- (1119/45715)*100
+
+#Credit loss saved
+Credit_loss_without_model - Credit_loss_with_model
+#Credit loss is reduced by 1.78% using the model
+#---------------------------------------------------------    
