@@ -987,7 +987,7 @@ for(i in 1:100)
 
 # plotting cutoffs 
 plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0.905,1,length=5),seq(0.905,1,length=5),cex.lab=1.5)
+axis(1,seq(0.01,1,length=5),seq(0.01,1,length=5),cex.lab=1.5)
 axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT[,2],col="darkgreen",lwd=2)
 lines(s,OUT[,3],col=4,lwd=2)
@@ -996,10 +996,10 @@ legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sens
 
 #---------------------------------------------------------    
 cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
+OUT
+# Let's choose a cutoff value of 95.2% for final model
 
-# Let's choose a cutoff value of 58% for final model
-
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= .58, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= .953, "no", "yes"))
 
 conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag.y, positive = "no")
 
@@ -1015,6 +1015,8 @@ sens
 
 spec
 
+conf_final
+
 #----------------------------End_of_model_buiding----------------------------------------
 
 #----------------------------Creation of application scorecard for merged dataset--------
@@ -1022,7 +1024,7 @@ spec
 Application_Card_Merged <- impvar_df
 
 predictions_logit <- predict(final_model, newdata = Application_Card_Merged[, -16], type = "response")
-predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.58, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit >= 0.952, "no", "yes"))
 
 # Appending the probabilities and response variables to the test data
 
@@ -1050,10 +1052,10 @@ Application_Card_Merged$Score = Offset + (Factor*Application_Card_Merged$odds)
 
 #Calculating the cut off score for application score
 
-cutoff_odds <- log(0.58/(1-0.58))
+cutoff_odds <- log(0.95/(1-0.95))
 cutoff_score <- Offset + (Factor*cutoff_odds)
 cutoff_score
-#Cut off Score is 342.87
+#Cut off Score is 418.52
 
 #-------------------------------Demographic data WOE, IV and model building-------
 #Need to perform WOE and IV Analysis
@@ -1210,7 +1212,7 @@ for(i in 1:100)
 
 # plotting cutoffs 
 plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0.93,1,length=5),seq(0.93,1,length=5),cex.lab=1.5)
+axis(1,seq(0.9,1,length=5),seq(0.9,1,length=5),cex.lab=1.5)
 axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT[,2],col="darkgreen",lwd=2)
 lines(s,OUT[,3],col=4,lwd=2)
@@ -1220,9 +1222,9 @@ legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sens
 #---------------------------------------------------------    
 cutoff_dem <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
 
-# Let's choose a cutoff value of 48% for final model
+# Let's choose a cutoff value of 93% for final model
 
-predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.48, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.958, "no", "yes"))
 
 conf_final <- confusionMatrix(predicted_Performance_tag, test$Performance.Tag, positive = "no")
 
@@ -1238,6 +1240,8 @@ sens
 
 spec
 
+conf_final
+
 #----------------------------End_of_model_buiding----------------------------------------
 
 #----------------------------Creation of application scorecard for demographic dataset--------
@@ -1245,7 +1249,7 @@ spec
 Application_Card_dem_Merged <- impvar_dem_df
 
 predictions_logit_dem <- predict(final_model_dem, newdata = Application_Card_dem_Merged[, -4], type = "response")
-predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.48, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(predictions_logit_dem >= 0.958, "no", "yes"))
 
 # Appending the probabilities and response variables to the test data
 
@@ -1273,10 +1277,10 @@ Application_Card_dem_Merged$Score = Offset + (Factor*Application_Card_dem_Merged
 
 #Calculating the cut off score for application score
 
-cutoff_odds_dem <- log(0.48/(1-0.48))
+cutoff_odds_dem <- log(0.958/(1-0.958))
 cutoff_score_dem <- Offset + (Factor*cutoff_odds_dem)
 cutoff_score_dem
-#Cut off Score is 331.25
+#Cut off Score is 423.49
 
 #---------------End of application Score card code for Demographic data----------------
 
@@ -1326,7 +1330,7 @@ fancyRpartPlot(tree_4)
 tree_4$variable.importance
 
 #---------------------------------------------------------    
-## Model Evaluation for tree_3 and tree_3
+## Model Evaluation for tree_3 and tree_4
 # using test data from now on
 # tree_4
 tree_3_pred <- predict(tree_3, test_dt[, -16],type = "class")
@@ -1354,7 +1358,7 @@ train_dt$Performance.Tag.y <- as.factor(train_dt$Performance.Tag.y)
 Smoted_train_dt <- SMOTE(Performance.Tag.y~.,data = train_dt,perc.over = 120,perc.under = 200)
 
 summary(Smoted_train_dt$Performance.Tag.y)
-
+set.seed(100)
 tree_5 <- rpart(Performance.Tag.y~.,data = Smoted_train_dt,control = rpart.control(minsplit = 20,cp=0.01),method = "class")
 
 tree_5_pred <- predict(tree_5,test_dt[,-16],type = "class")
