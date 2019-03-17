@@ -643,6 +643,10 @@ library(parallel)
   ##############################################################################################################################################
   #------------------------------------END OF EDA------------------------------------------------------------------
   # Multivariate Analysis
+  
+  ggplot(merged_df, aes(x= factor(Performance.Tag.y))) + geom_bar()  + xlab("Performance Tags") + ylab("Count") + ggtitle("Credit Card Applicant status plot") + geom_text(stat='count', aes(label=..count..), vjust=-1)
+  #the above graph gives the overall cpunt of the records for each performance tag
+  
   ggplot(merged_df, aes(x = Avgas.CC.Utilization.in.last.12.months, y = No.of.PL.trades.opened.in.last.12.months, group=Performance.Tag.y, color=Performance.Tag.y))+
     geom_line(stat='summary', fun.y='mean') +  
     geom_point(stat='summary', fun.y='mean')
@@ -695,6 +699,9 @@ library(parallel)
   #  With increasing no of inquiries in last 12months, 
   #  total no of trades increases, then gradually it becomes constant.
   #  for default users total no of trades is higher.
+  
+  ggplot(merged_df, aes(x=factor(Performance.Tag.y), y=Outstanding.Balance)) + geom_boxplot() + xlab("Performance.Tag") + ylab("Outstanding Balance") + ggtitle("Outstanding Balance vs Performance Tags")
+  #with increase in outstanding balance, the tendency of defaulting increases
   
   # WOE The weight of evidence tells the predictive power of an independent variable in relation to the dependent variable.
   # IV measures the strength of that relationship.
