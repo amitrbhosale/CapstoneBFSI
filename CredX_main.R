@@ -777,6 +777,10 @@ predictor_variables
 # Checking Number of NA present in Merged Dataset
 sapply(merged_df, function(x) sum(is.na(x)))
 
+# We are checking the NA values in the dataset, once the NA value is found, we are replacing it with the highest bin value
+# from the IV table where the WOE values is closest to the WOE value for NA bin. The process is repeated for all 
+# important predictor columns where the NA exists.
+
 # Replacing NA value with WOE for Avgas.CC.Utilization.in.last.12.months Field
 IV$Tables$Avgas.CC.Utilization.in.last.12.months
 val <- IV$Tables$Avgas.CC.Utilization.in.last.12.months$WOE[which(IV$Tables$Avgas.CC.Utilization.in.last.12.months$Avgas.CC.Utilization.in.last.12.months == "NA")]
@@ -882,6 +886,8 @@ traindata <- merged_df
 
 impvar_df <- traindata[,c(as.vector(predictor_variables$Variable),"Performance.Tag.y")]
 
+
+# Once the NAs are treated, we are replacing the actual values in the dataset with the corresponding WOE values using the function.
 
 # Replacement using woe_replace function
 impvar_df <- woe_replace(impvar_df,IV)
