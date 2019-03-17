@@ -917,23 +917,7 @@ model_2<- stepAIC(model_1, direction="both")
 
 summary(model_2)
 vif(model_2)
-# 
-# # Removing Total.No.of.Trades due to high vif and relatively high p-value
-# model_3 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
-#                  No.of.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
-#                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
-#                  family = "binomial", data = train)
-# summary(model_3)
-# vif(model_3)
-# 
-# # Removing No.of.trades.opened.in.last.12.months due to high p-value
-# 
-# model_4 <- glm(Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
-#                  No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
-#                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months, 
-#                family = "binomial", data = train)
-# summary(model_4)
-# vif(model_4)
+
 
 final_model <- model_2
 
@@ -1158,9 +1142,9 @@ vif(model_2)
 
 final_model_dem <- model_2
 
-p1_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[10],same_scales = TRUE)
-p2_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[6],same_scales = TRUE)
-p3_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[11],same_scales = TRUE)
+p1_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[1],same_scales = TRUE)
+p2_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[2],same_scales = TRUE)
+p3_dem <- plot_infotables(IV_dem, IV_dem$Summary$Variable[3],same_scales = TRUE)
 grid.arrange(p1_dem,p2_dem, p3_dem)
 
 #---------------------------------------------------------    
