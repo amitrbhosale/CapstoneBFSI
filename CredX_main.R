@@ -2017,6 +2017,61 @@ Scorescard_without_na$predicted_Performance_tag <- as.factor(Scorescard_without_
 
 matrix <- confusionMatrix(Scorescard_without_na$predicted_Performance_tag,Scorescard_without_na$Performance.Tag.y)
 
+#----------------------------------------------------------------------------------------
+#------------Application Scorecard for dataset for which perfromance tag is NA using random forest model------------------
+
+Application_Card_rf_NA <- subset(impvar_df,is.na(impvar_df$Performance.Tag.y)==TRUE)
+
+predictions_rf <- predict(Credit_rf, newdata = Application_Card_rf_NA[, -16], type = "prob")
+predicted_Performance_tag <- factor(ifelse(predictions_rf[,1] >= 0.51, "no", "yes"))
+
+# Appending the probabilities and response variables to the test data
+
+Application_Card_rf_NA$predicted_probs <- predictions_rf
+
+Application_Card_rf_NA$predicted_Performance_tag <- predicted_Performance_tag
+
+Application_Card_rf_NA$predict_NonDefault <- Application_Card_rf_NA$predicted_probs[,1]
+
+Application_Card_rf_NA$predict_Default <- 1 - Application_Card_rf_NA$predict_NonDefault
+
+Application_Card_rf_NA$odds <-  log(Application_Card_rf_NA$predict_NonDefault/Application_Card_rf_NA$predict_Default)
+
+# Score = Offset + ( Factor * log(odds) )
+# Factor = PDO/ln(2)
+# Offset = Score-(Factor*log(odds))
+# PDO = 20, Base Score=400, odds = 10
+
+Factor = 20/log(2)
+#28.8539
+
+Offset = 400 - (Factor*log(10))
+
+Application_Card_rf_NA$Score <- Offset + (Factor*Application_Card_rf_NA$odds)
+
+#Calculating the cut off score for application score
+
+cutoff_odds <- log(0.51/(1-0.51))
+cutoff_score <- Offset + (Factor*cutoff_odds)
+cutoff_score
+#Cut off Score is 334.715
+
+quantile(Application_Card_rf_NA$Score, seq(0,1,0.01))
+
+Application_Card_rf_NA$Performance.Tag.y <- ifelse(Application_Card_rf_NA$Performance.Tag.y==0,"yes",ifelse(is.na(Application_Card_rf_NA$Performance.Tag.y),"NA","no"))
+
+#Histogram for Application Scores
+ggplot(Application_Card_rf_NA) +  geom_histogram(mapping = aes(x = Application_Card_rf_NA$Score), binwidth = 15)+ geom_vline(xintercept = 335.98, color = "red",show.legend = TRUE)+xlab("Score")+ylab("Count")
+
+#Boxplot for predicted performance Tag
+boxplot(Application_Card_rf_NA$Score ~ Application_Card_rf_NA$predicted_Performance_tag,
+        Application_Card_rf_NA,xlab="Non-Default or Default",ylab="Score",main="Plot for predicted performance")
+abline(h=334, col="red")
+
+summary(Application_Card_rf_NA$predicted_Performance_tag)
+
+#Hence, by using the model, 5 out of 1425 customers would have been auto approved.
+
 ################################################################################################
 
 #-------------------------------Financial Analysis----------------------------------------------
@@ -2036,8 +2091,6 @@ credit_loss_with_model_percentage <- (credit_loss_with_model/sum(matrix_table))*
 #Credit loss saved is the differencce between cresit loss without model and credit loss wit model
 credit_loss_difference <- credit_loss_without_model_percentage-credit_loss_with_model_percentage
 credit_loss_difference
-
-#Credit loss is reduced by 2.63% by using the model
 
 #-------------------------------------------------------------------------------
 
