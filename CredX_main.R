@@ -900,11 +900,11 @@ correlation_matrix<- cor(cor_data)
 
 ggcorrplot(correlation_matrix)
 
-#######################################################################
+####################################################################################
   
-# Modelling Logistic regression
+#                                Modelling Logistic regression                     #
       
-########################################################################
+####################################################################################
 # splitting the data between train and test
 set.seed(100)
 
@@ -924,10 +924,8 @@ nrow(test)/nrow(impvar_without_NA_df)
 model_1 = glm(Performance.Tag.y ~ ., data = train, family = "binomial")
 summary(model_1)
 
-
 # Using StepAIC function
 model_2<- stepAIC(model_1, direction="both")
-
 summary(model_2)
 vif(model_2)
 
@@ -1004,7 +1002,7 @@ legend(x="topright",0.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sens
 #---------------------------------------------------------    
 cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.01)]
 OUT
-# Let's choose a cutoff value of 95.2% for final model
+# Let's choose a cutoff value of 95.3% for final model
 
 predicted_Performance_tag <- factor(ifelse(predictions_logit >= .953, "no", "yes"))
 
@@ -1362,10 +1360,12 @@ confusionMatrix(tree_4_pred, test_dt[, 16], positive = "no")
 summary(factor(train_dt$Performance.Tag.y))
 train_dt$Performance.Tag.y <- as.factor(train_dt$Performance.Tag.y)
 
+set.seed(100)
+
 Smoted_train_dt <- SMOTE(Performance.Tag.y~.,data = train_dt,perc.over = 120,perc.under = 200)
 
 summary(Smoted_train_dt$Performance.Tag.y)
-set.seed(100)
+
 tree_5 <- rpart(Performance.Tag.y~.,data = Smoted_train_dt,control = rpart.control(minsplit = 20,cp=0.01),method = "class")
 
 tree_5_pred <- predict(tree_5,test_dt[,-16],type = "class")
@@ -1556,7 +1556,6 @@ model_6 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.mon
 summary(model_6)
 vif(model_6)
 
-
 # Removing No.of.times.60.DPD.or.worse.in.last.12.months due to high p-value and VIF
 
 model_7 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.months + 
@@ -1577,7 +1576,6 @@ model_8 <- glm(formula = Performance.Tag.y ~ Avgas.CC.Utilization.in.last.12.mon
 
 summary(model_8)
 vif(model_8)
-
 
 final_model <- model_8
 
@@ -1710,13 +1708,16 @@ params <- makeParamSet(
   makeIntegerParam("ntree", lower = 30, upper = 300))
 
 #set validation strategy
-rdesc <- makeResampleDesc("CV",iters=5L)
+rdesc <- makeResampleDesc("CV",iters=20L)
 
 #set optimization technique
-ctrl <- makeTuneControlRandom(maxit = 5L)
+ctrl <- makeTuneControlRandom(maxit = 20L)
 
 #start tuning
 tune <- tuneParams(learner = rf.lrn, task = traintask, resampling = rdesc, measures = list(auc), par.set = params, control = ctrl, show.info = T)
+
+#Based on tuning parameters executed above, we have got the hyper parameters for random forest model
+#and they are been used in following model.
 
 #Building Rando forest model
 
@@ -1906,6 +1907,8 @@ test_predictions_rf <- test[, c("Performance.Tag.y", "predicted_probs", "predict
 
 #sorting the probabilities in decreasing order 
 test_predictions_rf <- test_predictions_rf[order(test_predictions_rf$predicted_probs, decreasing = T), ]
+
+#write.csv(test_predictions_rf,"gain_lift.csv")
 
 summary(test_predictions_rf$Performance.Tag.y)
 summary(test_predictions_rf$predicted_Performance_tag)
@@ -2104,3 +2107,4 @@ Revenue_loss_with_model
 
 #Hence revenue loss is reduced from 100% to 37.6% using the model
 #-----------------------------------------------------------------------------------    
+
