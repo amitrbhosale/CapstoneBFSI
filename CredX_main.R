@@ -1419,7 +1419,7 @@ perform_fn_rf <- function(cutoff)
 #---------------------------------------------------------    
 
 # creating cutoff values from 0.001 to 0.698 for plotting and initialising a matrix of size 1000x4
-s = seq(.96,.99,length=100)
+s = seq(.01,.99,length=100)
 
 OUT_rf = matrix(0,100,3)
 
@@ -1435,7 +1435,7 @@ for(i in 1:100)
 # plotting cutoffs
 
 plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
-axis(1,seq(0.96,0.99,length=5),seq(0.96,0.99,length=5),cex.lab=1.5)
+axis(1,seq(0.01,0.99,length=5),seq(0.01,0.99,length=5),cex.lab=1.5)
 axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
 lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
 lines(s,OUT_rf[,3],col=4,lwd=2)
@@ -1447,7 +1447,7 @@ cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<0.01)]
 OUT_rf
 # The plot shows that cutoff value of around 74% optimises sensitivity and accuracy
 
-predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.97, "no", "yes"))
+predicted_Performance_tag <- factor(ifelse(rf_pred[, 1] >= 0.983, "no", "yes"))
 
 conf_forest <- confusionMatrix(predicted_Performance_tag, test_rf[, 16], positive = "no")
 
@@ -1455,15 +1455,15 @@ conf_forest
 
 # Sensitivity
 conf_forest$byClass[1]
-#0.6867
+# 0.6106794
 
 # Specificity 
 conf_forest$byClass[2]
-#0.5169
+#0.6176471
 
 # Accuracy 
 conf_forest$overall[1]
-#0.67
+#0.6109733
 
 # Final RF important variables
 importance <- Credit_rf$importance 
