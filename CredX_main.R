@@ -408,10 +408,6 @@ boxplot(Credit_Bureau_data$Avgas.CC.Utilization.in.last.12.months)
 boxplot.stats(Credit_Bureau_data$Avgas.CC.Utilization.in.last.12.months)$out
 # 103 104 105 106 107 108 109 110 111 112 113 Are the Outlier that we see here
 
-# Checking Which Value is Outlier
-boxplot.stats(Credit_Bureau_data$No.of.times.30.DPD.or.worse.in.last.12.months)$out
-# 3 4 5 6 7 8 9 Are the Outlier that we see here
-
 # Checking if the No of trades opened in last 6 months variable has Outlier
 quantile(Credit_Bureau_data$No.of.trades.opened.in.last.6.months,seq(0,1,0.01),na.rm = TRUE)
 
@@ -526,7 +522,6 @@ univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$No.of.PL.trades.ope
 univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,"Inquires of Home and Auto Loan in Last 6 Months")
 univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,"Inquires of Home and Auto Loan in Last 12 Months")
 univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$Presence.of.open.home.loan,"Presence of Home Loan")
-#univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$Outstanding.Balance,"Outstanding Balance")
 univariate_continuous(Credit_Bureau_data,Credit_Bureau_data$Total.No.of.Trades,"Number of Trades")
 univariate_categorical(Credit_Bureau_data,Credit_Bureau_data$Presence.of.open.auto.loan,"Presence of Auto Loan")
 # Merging Demographic Dataset and Credit Bureau Dataset
