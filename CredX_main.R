@@ -550,9 +550,9 @@ library(parallel)
   #Filtering only defaulters data for univariate analysis
   #Defaulters <- subset(merged_df, merged_df$Performance.Tag.y==1)
   
-  #ggplot(Defaulters, aes(x=Gender))+geom_bar(stat = "count")
+  #ggplot(merged_df, aes(x=Gender))+geom_bar(stat = "count")
   
-  #ggplot(Defaulters, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
+  #ggplot(merged_df, aes(x=Marital.Status..at.the.time.of.application.))+geom_bar(stat = "count")
   
   #ggplot(Defaulters, aes(x=factor(No.of.dependents)))+geom_bar(stat = "count")
   
@@ -563,25 +563,25 @@ library(parallel)
   #EDA_data <- subset(EDA_data,!is.na(EDA_data$Performance.Tag.y))
   
   #ggplot(EDA_data, aes(x=Gender,fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=EDA_data$Marital.Status..at.the.time.of.application.,fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=EDA_data$Marital.Status..at.the.time.of.application.,fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$No.of.dependents),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Education),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Profession),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Education),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Type.of.residence),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Presence.of.open.home.loan),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #ggplot(EDA_data, aes(x=factor(EDA_data$Presence.of.open.auto.loan),fill=factor(Performance.Tag.y)))+geom_bar(position = "fill")
-  
+
   #Based on EDA done for categorical variables in above graphs, there is no specific attribute which has high impact on performance and hence all are included in WOE.
   
   #Taking only defaulters data for EDA on continuous values attributes
@@ -590,7 +590,7 @@ library(parallel)
   #ggplot(EDA_data_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_defaulted$Age), binwidth = 5)
   #The defaulters ratio is more between age range 30 to 50
   
-  #ggplot(EDA_data_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_defaulted$Income), binwidth = 5)
+  #ggplot(merged_df) +  geom_histogram(mapping = aes(x = merged_df$Income), binwidth = 5)
   #It is found that as the income keeps increasing, the deault rate keeps decreasing
   
   #ggplot(EDA_data_defaulted) +  geom_histogram(mapping = aes(x = EDA_data_defaulted$No.of.months.in.current.residence), binwidth = 5)
@@ -702,6 +702,15 @@ library(parallel)
   
   ggplot(merged_df, aes(x=factor(Performance.Tag.y), y=Outstanding.Balance)) + geom_boxplot() + xlab("Performance.Tag") + ylab("Outstanding Balance") + ggtitle("Outstanding Balance vs Performance Tags")
   #with increase in outstanding balance, the tendency of defaulting increases
+  
+  ggplot(merged_df, aes(x=Gender, fill = factor(Performance.Tag.y))) + geom_bar(position = "fill") + ylab("Proportion") + ggtitle("Gender proportions for Applicant defaulters and Non Defaulters")
+  #we dont see any significance difference between male and female for defaulters
+  
+  ggplot(merged_df, aes(x=factor(Performance.Tag.y), y=Income)) + geom_boxplot() + xlab("Performance.Tag") + ylab("Income") + ggtitle("Income vs Performance Tags")
+  #There is no significance differnce in mean of income for defaulters and non defaulters
+  
+  ggplot(merged_df, aes(x=factor(Performance.Tag.y), y=Age)) + geom_boxplot() + xlab("Performance.Tag") + ylab("Age") + ggtitle("Age vs Performance Tags")
+  #There is no significance differnce in mean of age for defaulters and non defaulters
   
   # WOE The weight of evidence tells the predictive power of an independent variable in relation to the dependent variable.
   # IV measures the strength of that relationship.
